@@ -69,7 +69,6 @@ export class HomeService {
         catch{
             return {"message": 'error', code: 500, 'result':[]};
         }
-
     }
 
     async getSelectedBrandProduct(request){
