@@ -88,7 +88,6 @@ export class HomeService {
         let product_id = request.product_id;
         console.log('hey', product_id)
         let query = "SELECT * FROM products.products_master WHERE product_id = '" + product_id + "'";
-        console.log('quer', query)
 
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
