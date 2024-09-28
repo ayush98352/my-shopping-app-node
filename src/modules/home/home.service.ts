@@ -75,8 +75,6 @@ export class HomeService {
         let brand_id = request.brand_id;
         let query = "SELECT * FROM products.products_master WHERE brand_id = '" + brand_id + "'";
         query += "AND availability = 'In Stock' AND is_active = 1";
-        // let whereParams = {}
-        // whereParams.push(1);
 
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
