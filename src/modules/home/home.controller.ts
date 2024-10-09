@@ -11,6 +11,33 @@ export class HomeController {
         return await this.homeService.getHome();
     }
 
+    @Get('/send-otp')
+    @HttpCode(200)
+    async sendOtp(@Req() request: Request) {
+        // console.log('phoneNumber', phoneNumber)
+        const otp = await this.homeService.generateOtp(request['query']['phone_number']);  // Service to generate OTP and send SMS
+        return { message: 'OTP sent successfully' };
+    }
+
+    
+
+    @Get('/verify-otp')
+    @HttpCode(200)
+    async verifyOtp(@Req() request: Request) {
+        
+        let phoneNumber = request['query']['phone_number'];
+        let otp = request['query']['otp'];
+        const isValid = await this.homeService.verifyOtp(phoneNumber, otp);
+        if (isValid) {
+            const token = await this.homeService.generateJWT(phoneNumber); // Service to generate JWT
+            // to add the login user if not exist
+            let userDetails = await this.homeService.addUser(phoneNumber);
+            return { token, userDetails };  // Return JWT token if OTP is valid
+        } else {
+            return { statusCode: 401, message: 'Invalid OTP' };
+        }
+    }
+
     @Get('/top-categories')
     @HttpCode(200)
     async getTopCategory() {
@@ -24,8 +51,8 @@ export class HomeController {
     }
     @Get('/getRecommenedProducts')
     @HttpCode(200)
-    async getRecommenedProducts() {
-        return await this.homeService.getRecommenedProducts();
+    async getRecommenedProducts(@Req() request: Request) {
+        return await this.homeService.getRecommenedProducts(request['query']);
     }
 
 
@@ -40,9 +67,72 @@ export class HomeController {
     async getSelectedBrandProduct(@Req() request: Request) {
         return await this.homeService.getSelectedBrandProduct(request['query']);
     } 
+
     @Get('/getProductDetails')
     @HttpCode(200)
     async getProductDetails(@Req() request: Request) {
         return await this.homeService.getProductDetails(request['query']);
     }
+
+    @Get('/checkWishlistStatus')
+    @HttpCode(200)
+    async checkWishlistStatus(@Req() request: Request) {
+        return await this.homeService.checkWishlistStatus(request['query']);
+    }
+
+    @Get('/addToWishlist')
+    @HttpCode(200)
+    async addToWishlist(@Req() request: Request) {
+        return await this.homeService.addToWishlist(request['query']);
+    }
+
+    @Get('/removeFromWishlist')
+    @HttpCode(200)
+    async removeFromWishlist(@Req() request: Request) {
+        return await this.homeService.removeFromWishlist(request['query']);
+    } 
+    
+    @Get('/getWishlistedProducts')
+    @HttpCode(200)
+    async getWishlistedProducts(@Req() request: Request) {
+        return await this.homeService.getWishlistedProducts(request['query']);
+    }
+    
+    @Get('/addToCart')
+    @HttpCode(200)
+    async addToCart(@Req() request: Request) {
+        return await this.homeService.addToCart(request['query']);
+    }
+    
+    @Get('/getCartDetails')
+    @HttpCode(200)
+    async getCartDetails(@Req() request: Request) {
+        return await this.homeService.getCartDetails(request['query']);
+    }
+
+
+    // POST /send-otp
+//   @Post('/send-otp')
+//   @HttpCode(200)
+//   async sendOtp(@Body('phone_number') phoneNumber: string) {
+//     const otp = await this.homeService.generateOtp(phoneNumber);  // Service to generate OTP and send SMS
+//     return { message: 'OTP sent successfully' };
+//   }
+
+  // POST /verify-otp
+//   @Post('/verify-otp')
+//   @HttpCode(200)
+//   async verifyOtp(
+//     @Body('phone_number') phoneNumber: string,
+//     @Body('otp') otp: string,
+//   ) {
+//     const isValid = await this.homeService.verifyOtp(phoneNumber, otp);
+//     if (isValid) {
+//       const token = this.homeService.generateJWT(phoneNumber); // Service to generate JWT
+//       return { token };  // Return JWT token if OTP is valid
+//     } else {
+//       return { statusCode: 401, message: 'Invalid OTP' };
+//     }
+//   }
+
 }

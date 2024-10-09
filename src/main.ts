@@ -7,8 +7,13 @@ import { ConfigService } from './config/config.service';
 import { urlencoded, json } from 'express';
 import * as csurf from 'csurf';
 
+import { config } from 'dotenv';
+
 
 async function bootstrap() {
+  config(); // Load environment variables
+
+
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
@@ -54,6 +59,9 @@ async function bootstrap() {
 
 
   app.use(json({ limit: '50mb' }));
+
+  // CSRF protection middleware
+  app.use(csurf({ cookie: true }));
 
 
   //app.setGlobalPrefix(configService.get('GLOBAL_PREFIX'));
