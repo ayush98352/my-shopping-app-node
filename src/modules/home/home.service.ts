@@ -315,7 +315,7 @@ export class HomeService {
 
     async getCartDetails(request){
         let user_id = request.user_id;
-        let query = `SELECT a.user_id, a.product_id, a.size, a.quantity, b.brand_name, b.product_short_name, b.main_image, b.selling_price, b.mrp, b.discount_percent
+        let query = `SELECT a.cart_id, a.user_id, a.product_id, a.size, a.quantity, b.brand_name, b.product_short_name, b.main_image, b.selling_price, b.mrp, b.discount_percent
         FROM users.cart a 
         JOIN products.products_master b 
         ON a.product_id = b.product_id 
@@ -328,6 +328,42 @@ export class HomeService {
         }
         catch{
             return {"message": 'error', code: 500, 'result':[]};
+        }
+    }
+
+    async updateCartInfo(request){
+        console.log('reuqest', request)
+        let product = JSON.parse(request.product);
+        let cart_id = product.cart_id;
+        let quantity = product.quantity;
+        let size = product.size;
+
+        console.log(request.product, cart_id, quantity, size);
+        let query = `UPDATE users.cart SET quantity = ?, size = ? WHERE cart_id = ?`;
+
+        let whereParams = [quantity, size, cart_id];
+
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'sucess', code: 200, 'result':'Cart Updated Succesfully'};
+        }
+        catch{
+            return {"message": 'error', code: 500, 'result':'Failed to update cart info'};
+        }
+    }
+
+    async removeFromCart(request){
+        let cart_id = request.cart_id;
+        let query = `delete from users.cart where cart_id = ?`;
+        
+        let whereParams = [cart_id];
+
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'sucess', code: 200, 'result':'Removed Succesfully'};
+        }
+        catch{
+            return {"message": 'error', code: 500, 'result':'Failed to remove from cart'};
         }
     }
 }

@@ -109,6 +109,20 @@ export class HomeController {
     async getCartDetails(@Req() request: Request) {
         return await this.homeService.getCartDetails(request['query']);
     }
+    
+    @Get('/updateCartInfo')
+    @HttpCode(200)
+    async updateCartInfo(@Req() request: Request) {
+        console.log('Req', request)
+        console.log('Req1', request['query'])
+        return await this.homeService.updateCartInfo(request['query']);
+    }
+    
+    @Get('/removeFromCart')
+    @HttpCode(200)
+    async removeFromCart(@Req() request: Request) {
+        return await this.homeService.removeFromCart(request['query']);
+    }
 
 
     // POST /send-otp
