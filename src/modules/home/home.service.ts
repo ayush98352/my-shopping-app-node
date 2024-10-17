@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { lastValueFrom } from 'rxjs';
 
 
 import { CommonLogicService } from 'src/common-logic/common-logic.service';
@@ -10,7 +12,7 @@ import e from 'express';
 export class HomeService {
     private otps = new Map(); // Store OTPs temporarily in-memory (can use Redis or DB in production)
 
-    constructor(private readonly commonLogicService: CommonLogicService, private readonly jwtService: JwtService, private configService: ConfigService) {}
+    constructor(private readonly commonLogicService: CommonLogicService, private readonly jwtService: JwtService, private configService: ConfigService, private httpService: HttpService) {}
 
       // Function to generate OTP
     async generateOtp(phoneNumber: string): Promise<void> {
@@ -233,9 +235,8 @@ export class HomeService {
     async addToWishlist(request){
         let user_id = request.user_id;
         let product_id = request.product_id;
-        let query = "INSERT INTO users.wishlist(user_id, product_id) VALUES(?, ?)";
+        let query = "INSERT INTO users.wishlist(user_id, product_id) VALUES(?, ?) ON DUPLICATE KEY UPDATE added_at = CURRENT_TIMESTAMP()";
         let whereParams = [user_id, product_id];
-
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
@@ -332,13 +333,11 @@ export class HomeService {
     }
 
     async updateCartInfo(request){
-        console.log('reuqest', request)
         let product = JSON.parse(request.product);
         let cart_id = product.cart_id;
         let quantity = product.quantity;
         let size = product.size;
 
-        console.log(request.product, cart_id, quantity, size);
         let query = `UPDATE users.cart SET quantity = ?, size = ? WHERE cart_id = ?`;
 
         let whereParams = [quantity, size, cart_id];
@@ -366,4 +365,159 @@ export class HomeService {
             return {"message": 'error', code: 500, 'result':'Failed to remove from cart'};
         }
     }
+
+    async getSearchedList(request){
+        let searchedText = request.searchedText;
+
+        let query = 
+        `SELECT category_id, category_name, "category_name" as type FROM products.top_categories WHERE category_name LIKE ? 
+        UNION SELECT brand_id, brand_name, "brand_name" as type FROM products.brands WHERE brand_name LIKE ?
+        UNION SELECT product_id, product_short_name, "product_short_name" as type FROM products.products_master WHERE product_short_name LIKE ? 
+        UNION SELECT product_id, product_name, "product_name" as type FROM products.products_master WHERE product_name LIKE ? limit 5`;
+        let whereParams = ['%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%'];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'sucess', code: 200, 'result':result};
+        }catch{
+            return {"message": 'error', code: 500, 'result':[]};
+        }
+
+        // products.brands
+    }
+
+    async getUserLocation(request){
+        let lon = request.lon;
+        let lat = request.lat;
+
+        const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
+        // const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
+        // const response = await lastValueFrom(this.httpService.get(url));
+        // const locationData = response.data;
+
+        // // Format the response to match your desired structure
+        // const formattedResponse = {
+        // is_serviceable: true,
+        // poi_data: { /* your polygon data here */ },
+        // location_info: {
+        //     sublocalities: locationData.results[0].address_components.filter((c: any) => c.types.includes('sublocality')),
+        //     city: locationData.results[0].address_components.find((c: any) => c.types.includes('locality')).long_name,
+        //     district: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_2')).long_name,
+        //     state: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_1')).long_name,
+        //     country: locationData.results[0].address_components.find((c: any) => c.types.includes('country')).long_name,
+        //     postal_code: locationData.results[0].address_components.find((c: any) => c.types.includes('postal_code')).long_name,
+        //     formatted_address: locationData.results[0].formatted_address
+        // },
+        // display_address: {
+        //     title: locationData.results[0].address_components.find((c: any) => c.types.includes('sublocality'))?.long_name || '',
+        //     description: locationData.results[0].formatted_address,
+        //     address_line: locationData.results[0].formatted_address
+        // },
+        // coordinate: {
+        //     lat: lat,
+        //     lon: lon
+        // }
+        // };
+
+
+        const formattedResponse = {
+            "is_serviceable": true,
+            "poi_data": {},
+            "location_info": {
+                "sublocalities": [
+                    {
+                        "long_name": "Devin Paradise Enclave",
+                        "short_name": "Devin Paradise Enclave",
+                        "types": [
+                            "political",
+                            "sublocality",
+                            "sublocality_level_2"
+                        ]
+                    }
+                ],
+                "city": "Bengaluru",
+                "district": "Bangalore Division",
+                "state": "Karnataka",
+                "country": "India",
+                "postal_code": "560064",
+                "formatted_address": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
+            },
+            "display_address": {
+                "title": "Devin Paradise Enclave",
+                "description": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India",
+                "address_line": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
+            },
+            "coordinate": {
+                "lat": "13.0805688",
+                "lon": "77.6401022"
+            }
+        }
+        
+        return formattedResponse;
+    }
+
+    async fetchPlaceSuggestions(request) {
+
+        const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
+        const input = request.searchedText;
+        const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&components=country:in&key=${apiKey}`;
+        
+        try {
+            const response = await lastValueFrom(this.httpService.get(url));
+            const locationData = JSON.parse(JSON.stringify(response.data));
+            return locationData;
+        } catch (error) {
+            console.error('Error fetching place suggestions:', error);
+            throw new Error('Failed to fetch place suggestions');
+        }
+        
+    }
+      
+    async fetchSelectedAddressDeatils(request) {
+        const placeId = request.placeId;
+
+        const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
+
+        const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}`;
+        try {
+            const response = await lastValueFrom(this.httpService.get(url));
+
+            const locationInfo = JSON.parse(JSON.stringify(response.data.result));
+            const formattedResponse = {
+                is_serviceable: true,  // You can add your logic here for serviceability
+                poi_data: { polygons: [] },  // Placeholder, as Blinkit does
+                location_info: {
+                    sublocalities: locationInfo.address_components.filter((component) => component.types.includes('sublocality')).map((comp) => comp.long_name),
+                    city: locationInfo.address_components.find((comp) => comp.types.includes('locality'))?.long_name,
+                    district: locationInfo.address_components.find((comp) => comp.types.includes('administrative_area_level_2'))?.long_name,
+                    country: locationInfo.address_components.find((comp) => comp.types.includes('country'))?.long_name,
+                    state: locationInfo.address_components.find((comp) => comp.types.includes('administrative_area_level_1'))?.long_name,
+                    postal_code: locationInfo.address_components.find((comp) => comp.types.includes('postal_code'))?.long_name || '',
+                    formatted_address: locationInfo.formatted_address,
+                    premises: [],
+                    street: [],
+                    landmarks: []
+                },
+                display_address: {
+                    title: locationInfo.name,
+                    description: `${locationInfo.address_components.find((comp) => comp.types.includes('administrative_area_level_2'))?.long_name}, ${locationInfo.address_components.find((comp) => comp.types.includes('locality'))?.long_name}, ${locationInfo.address_components.find((comp) => comp.types.includes('administrative_area_level_1'))?.long_name}, ${locationInfo.address_components.find((comp) => comp.types.includes('country'))?.long_name}`,
+                    address_line: locationInfo.formatted_address
+                },
+                coordinate: {
+                    lat: locationInfo.geometry.location.lat,
+                    lon: locationInfo.geometry.location.lng
+                },
+                locality: locationInfo.address_components.find((comp) => comp.types.includes('sublocality'))?.long_name || '',
+                city: locationInfo.address_components.find((comp) => comp.types.includes('locality'))?.long_name || '',
+                alias_id: 0  // Placeholder, add your alias logic if needed
+            };
+            return formattedResponse;
+        } catch (error) {
+            console.error('Error fetching place details:', error);
+            throw new Error('Failed to fetch place details');
+        }
+
+    }
+    
+
+
 }

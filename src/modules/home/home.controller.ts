@@ -123,6 +123,30 @@ export class HomeController {
     async removeFromCart(@Req() request: Request) {
         return await this.homeService.removeFromCart(request['query']);
     }
+    
+    @Get('/getSearchedList')
+    @HttpCode(200)
+    async getSearchedList(@Req() request: Request) {
+        return await this.homeService.getSearchedList(request['query']);
+    }
+    
+    @Get('/getUserLocation')
+    @HttpCode(200)
+    async getUserLocation(@Req() request: Request) {
+        return await this.homeService.getUserLocation(request['query']);
+    }
+    
+    @Get('/fetchPlaceSuggestions')
+    @HttpCode(200)
+    async fetchPlaceSuggestions(@Req() request: Request) {
+        return await this.homeService.fetchPlaceSuggestions(request['query']);
+    }
+    
+    @Get('/fetchSelectedAddressDeatils')
+    @HttpCode(200)
+    async fetchSelectedAddressDeatils(@Req() request: Request) {
+        return await this.homeService.fetchSelectedAddressDeatils(request['query']);
+    }
 
 
     // POST /send-otp
