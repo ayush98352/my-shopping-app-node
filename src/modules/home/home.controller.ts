@@ -146,6 +146,18 @@ export class HomeController {
     @HttpCode(200)
     async fetchSelectedAddressDeatils(@Req() request: Request) {
         return await this.homeService.fetchSelectedAddressDeatils(request['query']);
+    } 
+    
+    @Get('/addNewAddress')
+    @HttpCode(200)
+    async addNewAddress(@Req() request: Request) {
+        return await this.homeService.addNewAddress(request['query']);
+    }
+    
+    @Get('/getSavedAddress')
+    @HttpCode(200)
+    async getSavedAddress(@Req() request: Request) {
+        return await this.homeService.getSavedAddress(request['query']);
     }
 
 

@@ -390,67 +390,67 @@ export class HomeService {
         let lat = request.lat;
 
         const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
-        // const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
-        // const response = await lastValueFrom(this.httpService.get(url));
-        // const locationData = response.data;
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
+        const response = await lastValueFrom(this.httpService.get(url));
+        const locationData = response.data;
 
-        // // Format the response to match your desired structure
-        // const formattedResponse = {
-        // is_serviceable: true,
-        // poi_data: { /* your polygon data here */ },
-        // location_info: {
-        //     sublocalities: locationData.results[0].address_components.filter((c: any) => c.types.includes('sublocality')),
-        //     city: locationData.results[0].address_components.find((c: any) => c.types.includes('locality')).long_name,
-        //     district: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_2')).long_name,
-        //     state: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_1')).long_name,
-        //     country: locationData.results[0].address_components.find((c: any) => c.types.includes('country')).long_name,
-        //     postal_code: locationData.results[0].address_components.find((c: any) => c.types.includes('postal_code')).long_name,
-        //     formatted_address: locationData.results[0].formatted_address
-        // },
-        // display_address: {
-        //     title: locationData.results[0].address_components.find((c: any) => c.types.includes('sublocality'))?.long_name || '',
-        //     description: locationData.results[0].formatted_address,
-        //     address_line: locationData.results[0].formatted_address
-        // },
-        // coordinate: {
-        //     lat: lat,
-        //     lon: lon
-        // }
-        // };
-
-
+        // Format the response to match your desired structure
         const formattedResponse = {
-            "is_serviceable": true,
-            "poi_data": {},
-            "location_info": {
-                "sublocalities": [
-                    {
-                        "long_name": "Devin Paradise Enclave",
-                        "short_name": "Devin Paradise Enclave",
-                        "types": [
-                            "political",
-                            "sublocality",
-                            "sublocality_level_2"
-                        ]
-                    }
-                ],
-                "city": "Bengaluru",
-                "district": "Bangalore Division",
-                "state": "Karnataka",
-                "country": "India",
-                "postal_code": "560064",
-                "formatted_address": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
-            },
-            "display_address": {
-                "title": "Devin Paradise Enclave",
-                "description": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India",
-                "address_line": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
-            },
-            "coordinate": {
-                "lat": "13.0805688",
-                "lon": "77.6401022"
-            }
+        is_serviceable: true,
+        poi_data: { /* your polygon data here */ },
+        location_info: {
+            sublocalities: locationData.results[0].address_components.filter((c: any) => c.types.includes('sublocality')),
+            city: locationData.results[0].address_components.find((c: any) => c.types.includes('locality')).long_name,
+            district: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_2')).long_name,
+            state: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_1')).long_name,
+            country: locationData.results[0].address_components.find((c: any) => c.types.includes('country')).long_name,
+            postal_code: locationData.results[0].address_components.find((c: any) => c.types.includes('postal_code')).long_name,
+            formatted_address: locationData.results[0].formatted_address
+        },
+        display_address: {
+            title: locationData.results[0].address_components.find((c: any) => c.types.includes('sublocality'))?.long_name || '',
+            description: locationData.results[0].formatted_address,
+            address_line: locationData.results[0].formatted_address
+        },
+        coordinate: {
+            lat: lat,
+            lon: lon
         }
+        };
+
+
+        // const formattedResponse = {
+        //     "is_serviceable": true,
+        //     "poi_data": {},
+        //     "location_info": {
+        //         "sublocalities": [
+        //             {
+        //                 "long_name": "Devin Paradise Enclave",
+        //                 "short_name": "Devin Paradise Enclave",
+        //                 "types": [
+        //                     "political",
+        //                     "sublocality",
+        //                     "sublocality_level_2"
+        //                 ]
+        //             }
+        //         ],
+        //         "city": "Bengaluru",
+        //         "district": "Bangalore Division",
+        //         "state": "Karnataka",
+        //         "country": "India",
+        //         "postal_code": "560064",
+        //         "formatted_address": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
+        //     },
+        //     "display_address": {
+        //         "title": "Devin Paradise Enclave",
+        //         "description": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India",
+        //         "address_line": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
+        //     },
+        //     "coordinate": {
+        //         "lat": "13.0805688",
+        //         "lon": "77.6401022"
+        //     }
+        // }
         
         return formattedResponse;
     }
@@ -517,6 +517,47 @@ export class HomeService {
         }
 
     }
+
+    async addNewAddress(request){
+        console.log('re', request);
+
+        let query = `INSERT INTO users.saved_addresses (user_id, saved_as_name, phone, address_type, house_no, floor_no, tower_block, landmark, latitude, longitude, full_address, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+        let whereParams = [
+            request.userId,
+            request.name,
+            request.phone,
+            request.addressType,
+            request.houseNumber,
+            request.floor,
+            request.towerBlock,
+            request.landmark,
+            request.latitude,
+            request.longitude,
+            request.fullAddress,
+            request.is_default
+        ];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+
+    }
+
+    async getSavedAddress(request){
+        let user_id = request.user_id;
+        let query = `SELECT * FROM users.saved_addresses WHERE user_id = ?`;
+        let whereParams = [user_id];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+   
     
 
 
