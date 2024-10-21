@@ -9,6 +9,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthMiddleware } from './middleware/auth.middleware';
+import { PaymentModule } from './modules/payment/payment.module';
+// import { CsrfModule } from './_csrf/csrf.module';
 
 
 @Module({
@@ -29,6 +31,7 @@ import { AuthMiddleware } from './middleware/auth.middleware';
     MysqlConnModule,
     HomeModule,
     AuthModule,
+    PaymentModule, 
   ],
   controllers: [AppController],
   providers: [AppService],

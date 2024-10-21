@@ -8,6 +8,9 @@ import { urlencoded, json } from 'express';
 import * as csurf from 'csurf';
 
 import { config } from 'dotenv';
+import { Request, Response } from 'express'; // Import types
+import { AuthMiddleware } from './middleware/auth.middleware'; // Update with the correct path
+
 
 
 async function bootstrap() {
@@ -17,51 +20,87 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
   });
-  const configService = new ConfigService('.env');
+  // const configService = new ConfigService('.env');
+  const csrfProtection = csurf({ cookie: { httpOnly: true } });
+
+  
+  
   app.enableCors({
-    origin: [
+    origin: [ 
       'http://localhost:4200',
     ],
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
-      'X-XSRF-TOKEN',
-      'access-control-allow-methods',
-      'Access-Control-Allow-Origin',
-      'access-control-allow-credentials',
-      'access-control-allow-headers',
-      'Access-Control-Request-Headers'
+      'X-CSRF-Token',
     ],
     credentials: true,
   });
   app.use(cookieParser());
   app.use(helmet());
-  app.use(
-    urlencoded({ extended: true, limit: '50mb', parameterLimit: 100000 }),
-  );
- 
-  // app.use(csurf({ cookie: { httpOnly: true } }));
-
-
-  const disabled_csrf_paths:string[] = [
-  ]
- 
- 
-  app.use((req, res, next) => {
-    if (!disabled_csrf_paths.includes(req.path) && !req.path.includes('/staffing-module')) {  
-      csurf({ cookie: { httpOnly: true } })(req, res, next);
-    }
-    else {
-      next();
-    }
-  });
-
-
   app.use(json({ limit: '50mb' }));
 
+  // app.use(
+  //   urlencoded({ extended: true, limit: '50mb', parameterLimit: 100000 }),
+  // );
+ 
+  // app.use(csurf({ cookie: { httpOnly: true } }));
+  
+   // Apply CSRF protection middleware
+  //  app.use(csrfProtection);
+
+   app.use((req: Request, res: Response, next) => {
+    // console.log('Incoming CSRF Token:', req.headers['x-csrf-token']);
+    // console.log('CSRF Token from Cookie:', req.cookies['_csrf']);
+    csrfProtection(req, res, (err) => {
+      // if (err) {
+      //   console.log('CSRF Protection Error:', err);
+      //   return res.status(403).send('Forbidden');
+      // }
+      next();
+    });
+  });
+  
+
+
+   // Endpoint to get CSRF token
+  //  app.get('/csrf-token', (req: Request, res: Response) => {
+  //   res.json({ csrfToken: req.csrfToken() });
+  // });
+
+  // app.use(csrfProtection); // Apply CSRF middleware
+  // app.get('/csrf-token', (req: Request, res: Response) => {
+  //   res.json({ csrfToken: req.csrfToken() });
+  // });
+  
+  // // Define a simple route handler
+  // app.get('/csrf-token', (req: Request, res: Response) => {
+  //   res.json({ csrfToken: req.csrfToken() });
+  // });
+  
+    // Apply AuthMiddleware
+  // app.use(new AuthMiddleware().use); // This is for global middleware
+
+
+  
+ 
+  // app.use((req: Request, res: Response, next) => {
+  //   console.log('Cookie:', req.cookies); 
+  //   console.log('CSRF Token:', req.headers['x-csrf-token']); 
+  //   csrfProtection(req, res, (err) => {
+  //     // if (err) {
+  //     //   return res.status(403).send('Forbidden');
+  //     // }
+  //     console.log('err', err);
+  //     next();
+  //   });
+  // });
+
+  // app.use(json({ limit: '50mb' }));
+
   // CSRF protection middleware
-  app.use(csurf({ cookie: true }));
+  // app.use(csurf({ cookie: true }));
 
 
   //app.setGlobalPrefix(configService.get('GLOBAL_PREFIX'));

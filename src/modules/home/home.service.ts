@@ -108,6 +108,7 @@ export class HomeService {
         let category_id = request.category_id;
         let user_id = request.user_id;
 
+
         // let query = "SELECT * FROM products.products_master where category_id = '"+category_id+"'";
         // query += "AND availability = 'In Stock' AND is_active = 1";
 
@@ -519,7 +520,6 @@ export class HomeService {
     }
 
     async addNewAddress(request){
-        console.log('re', request);
 
         let query = `INSERT INTO users.saved_addresses (user_id, saved_as_name, phone, address_type, house_no, floor_no, tower_block, landmark, latitude, longitude, full_address, is_default) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 

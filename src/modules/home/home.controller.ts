@@ -11,22 +11,22 @@ export class HomeController {
         return await this.homeService.getHome();
     }
 
-    @Get('/send-otp')
+    @Post('/send-otp')
     @HttpCode(200)
     async sendOtp(@Req() request: Request) {
         // console.log('phoneNumber', phoneNumber)
-        const otp = await this.homeService.generateOtp(request['query']['phone_number']);  // Service to generate OTP and send SMS
+        const otp = await this.homeService.generateOtp(request.body['phone_number']);  // Service to generate OTP and send SMS
         return { message: 'OTP sent successfully' };
     }
 
     
 
-    @Get('/verify-otp')
+    @Post('/verify-otp')
     @HttpCode(200)
     async verifyOtp(@Req() request: Request) {
         
-        let phoneNumber = request['query']['phone_number'];
-        let otp = request['query']['otp'];
+        let phoneNumber = request.body['phone_number'];
+        let otp = request.body['otp'];
         const isValid = await this.homeService.verifyOtp(phoneNumber, otp);
         if (isValid) {
             const token = await this.homeService.generateJWT(phoneNumber); // Service to generate JWT
@@ -49,115 +49,116 @@ export class HomeController {
     async getBrands() {
         return await this.homeService.getBrands();
     }
-    @Get('/getRecommenedProducts')
+    @Post('/getRecommenedProducts')
     @HttpCode(200)
     async getRecommenedProducts(@Req() request: Request) {
-        return await this.homeService.getRecommenedProducts(request['query']);
+        const params = request.body; // Access the request body
+        return await this.homeService.getRecommenedProducts(params);
     }
 
 
-    @Get('/getSelectedCategoryProduct')
+    @Post('/getSelectedCategoryProduct')
     @HttpCode(200)
     async getSelectedCategoryProduct(@Req() request: Request) {
-        return await this.homeService.getSelectedCategoryProduct(request['query']);
+        return await this.homeService.getSelectedCategoryProduct(request.body);
     }
 
-    @Get('/getSelectedBrandProduct')
+    @Post('/getSelectedBrandProduct')
     @HttpCode(200)
     async getSelectedBrandProduct(@Req() request: Request) {
-        return await this.homeService.getSelectedBrandProduct(request['query']);
+        return await this.homeService.getSelectedBrandProduct(request.body);
     } 
 
-    @Get('/getProductDetails')
+    @Post('/getProductDetails')
     @HttpCode(200)
     async getProductDetails(@Req() request: Request) {
-        return await this.homeService.getProductDetails(request['query']);
+        return await this.homeService.getProductDetails(request.body);
     }
 
-    @Get('/checkWishlistStatus')
+    @Post('/checkWishlistStatus')
     @HttpCode(200)
     async checkWishlistStatus(@Req() request: Request) {
-        return await this.homeService.checkWishlistStatus(request['query']);
+        return await this.homeService.checkWishlistStatus(request.body);
     }
 
-    @Get('/addToWishlist')
+    @Post('/addToWishlist')
     @HttpCode(200)
     async addToWishlist(@Req() request: Request) {
-        return await this.homeService.addToWishlist(request['query']);
+        return await this.homeService.addToWishlist(request.body);
     }
 
-    @Get('/removeFromWishlist')
+    @Post('/removeFromWishlist')
     @HttpCode(200)
     async removeFromWishlist(@Req() request: Request) {
-        return await this.homeService.removeFromWishlist(request['query']);
+        return await this.homeService.removeFromWishlist(request.body);
     } 
     
-    @Get('/getWishlistedProducts')
+    @Post('/getWishlistedProducts')
     @HttpCode(200)
     async getWishlistedProducts(@Req() request: Request) {
-        return await this.homeService.getWishlistedProducts(request['query']);
+        return await this.homeService.getWishlistedProducts(request.body);
     }
     
-    @Get('/addToCart')
+    @Post('/addToCart')
     @HttpCode(200)
     async addToCart(@Req() request: Request) {
-        return await this.homeService.addToCart(request['query']);
+        return await this.homeService.addToCart(request.body);
     }
     
-    @Get('/getCartDetails')
+    @Post('/getCartDetails')
     @HttpCode(200)
     async getCartDetails(@Req() request: Request) {
-        return await this.homeService.getCartDetails(request['query']);
+        return await this.homeService.getCartDetails(request.body);
     }
     
-    @Get('/updateCartInfo')
+    @Post('/updateCartInfo')
     @HttpCode(200)
     async updateCartInfo(@Req() request: Request) {
         console.log('Req', request)
-        console.log('Req1', request['query'])
-        return await this.homeService.updateCartInfo(request['query']);
+        console.log('Req1', request.body)
+        return await this.homeService.updateCartInfo(request.body);
     }
     
-    @Get('/removeFromCart')
+    @Post('/removeFromCart')
     @HttpCode(200)
     async removeFromCart(@Req() request: Request) {
-        return await this.homeService.removeFromCart(request['query']);
+        return await this.homeService.removeFromCart(request.body);
     }
     
-    @Get('/getSearchedList')
+    @Post('/getSearchedList')
     @HttpCode(200)
     async getSearchedList(@Req() request: Request) {
-        return await this.homeService.getSearchedList(request['query']);
+        return await this.homeService.getSearchedList(request.body);
     }
     
-    @Get('/getUserLocation')
+    @Post('/getUserLocation')
     @HttpCode(200)
     async getUserLocation(@Req() request: Request) {
-        return await this.homeService.getUserLocation(request['query']);
+        return await this.homeService.getUserLocation(request.body);
     }
     
-    @Get('/fetchPlaceSuggestions')
+    @Post('/fetchPlaceSuggestions')
     @HttpCode(200)
     async fetchPlaceSuggestions(@Req() request: Request) {
-        return await this.homeService.fetchPlaceSuggestions(request['query']);
+        return await this.homeService.fetchPlaceSuggestions(request.body);
     }
     
-    @Get('/fetchSelectedAddressDeatils')
+    @Post('/fetchSelectedAddressDeatils')
     @HttpCode(200)
     async fetchSelectedAddressDeatils(@Req() request: Request) {
-        return await this.homeService.fetchSelectedAddressDeatils(request['query']);
+        return await this.homeService.fetchSelectedAddressDeatils(request.body);
     } 
     
-    @Get('/addNewAddress')
+    @Post('/addNewAddress')
     @HttpCode(200)
     async addNewAddress(@Req() request: Request) {
-        return await this.homeService.addNewAddress(request['query']);
+        return await this.homeService.addNewAddress(request.body);
     }
     
-    @Get('/getSavedAddress')
+    @Post('/getSavedAddress')
     @HttpCode(200)
     async getSavedAddress(@Req() request: Request) {
-        return await this.homeService.getSavedAddress(request['query']);
+        return await this.homeService.getSavedAddress(request.body);
     }
 
 
