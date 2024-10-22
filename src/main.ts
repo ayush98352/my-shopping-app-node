@@ -109,9 +109,18 @@ async function bootstrap() {
   const port = process.env.PORT || '7399';
 
 
+
+
+
   const httpServer = await app.listen(port, () =>
     console.log('App is listening on port ' + port),
+    
   );  
+  if(process.env.NODE_ENV === 'production') {
+    console.log('prod')
+  } else {
+    console.log('dev')
+  }  
 
 
   httpServer.setTimeout(1800000);
