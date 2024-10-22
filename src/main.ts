@@ -31,7 +31,9 @@ async function bootstrap() {
       'https://ayush98352.github.io/my_shopping_app',
       'https://ayush98352.github.io/my-app',
       'https://ayush98352.github.io/my_shopping_app/',
-      'https://ayush98352.github.io/my-app/'
+      'https://ayush98352.github.io/my-app/',
+      'https://lovely-sorbet-eaaf67.netlify.app/',
+      'https://lovely-sorbet-eaaf67.netlify.app'
     ],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: [
