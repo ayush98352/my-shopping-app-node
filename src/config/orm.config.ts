@@ -4,8 +4,8 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 export const getHosts = (): string[] => {
-
   return process.env.MYSQL_HOSTS.split(',');
+  // return process.env.MYSQL_HOSTS.split(',');
 };
 
 export default registerAs('orm', () => {
