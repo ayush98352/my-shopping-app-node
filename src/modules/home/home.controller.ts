@@ -5,12 +5,6 @@ import { HomeService } from './home.service';
 export class HomeController {
     constructor(private readonly homeService: HomeService) {}
 
-    @Get('/')
-    @HttpCode(200)
-    async getHome() {
-        return await this.homeService.getHome();
-    }
-
     @Post('/send-otp')
     @HttpCode(200)
     async sendOtp(@Req() request: Request) {
@@ -19,7 +13,6 @@ export class HomeController {
         return { message: 'OTP sent successfully' };
     }
 
-    
 
     @Post('/verify-otp')
     @HttpCode(200)

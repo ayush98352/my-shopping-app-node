@@ -26,7 +26,13 @@ export class HomeService {
     async verifyOtp(phoneNumber: string, otp: string): Promise<boolean> {
         
         const storedOtp = this.otps.get(phoneNumber); // Get stored OTP for the phone number
-        return storedOtp === otp; // Check if OTP matches
+
+        if (storedOtp === otp) {
+            this.otps.delete(phoneNumber); // Remove OTP from memory after successful verification
+            return true;
+        } else {
+            return false;
+        }
     }
 
     // Function to generate JWT
@@ -68,18 +74,6 @@ export class HomeService {
 
     }
     
-    async getHome(){
-        let query = "SELECT * FROM brands.category";
-        try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
-            return {"message": 'sucess', code: 200, 'result':result};
-        }
-        catch{
-            return {"message": 'error', code: 500, 'result':[]};
-        }
-
-    }
-
     async getTopCategories(){
         let query = "SELECT * FROM products.top_categories";
         try{
