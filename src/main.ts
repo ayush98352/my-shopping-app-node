@@ -28,6 +28,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [ 
       'http://localhost:4200',
+      'https://ayush98352.github.io/my_shopping_app',
+      'https://ayush98352.github.io/my-app',
       'https://ayush98352.github.io/my_shopping_app/',
       'https://ayush98352.github.io/my-app/'
     ],
@@ -36,6 +38,7 @@ async function bootstrap() {
       'Content-Type',
       'Authorization',
       'X-CSRF-Token',
+      'Access-Control-Allow-Origin'  // Add this if necessary
     ],
     credentials: true,
   });
@@ -118,11 +121,11 @@ async function bootstrap() {
     console.log('App is listening on port ' + port),
     
   );  
-  if(process.env.NODE_ENV === 'production') {
-    console.log('prod')
-  } else {
-    console.log('dev')
-  }  
+  // if(process.env.NODE_ENV === 'production') {
+  //   console.log('prod')
+  // } else {
+  //   console.log('dev')
+  // }  
 
 
   httpServer.setTimeout(1800000);
