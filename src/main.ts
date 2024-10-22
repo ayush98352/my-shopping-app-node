@@ -28,6 +28,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [ 
       'http://localhost:4200',
+      'https://ayush98352.github.io/my_shopping_app/',
+      'https://ayush98352.github.io/my-app/'
     ],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: [
