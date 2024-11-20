@@ -88,7 +88,6 @@ export class HomeService {
 
     async getBrands(){
         let query = "SELECT * FROM products.brands";
-        console.log('brand', query )
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'RAILWAY_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
@@ -386,7 +385,6 @@ export class HomeService {
         let lat = request.lat;
 
         const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
-        console.log('aqpi', apiKey)
         const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
         const response = await lastValueFrom(this.httpService.get(url));
         const locationData = response.data;

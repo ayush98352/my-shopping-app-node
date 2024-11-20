@@ -8,7 +8,6 @@ export class HomeController {
     @Post('/send-otp')
     @HttpCode(200)
     async sendOtp(@Req() request: Request) {
-        // console.log('phoneNumber', phoneNumber)
         const otp = await this.homeService.generateOtp(request.body['phone_number']);  // Service to generate OTP and send SMS
         return { message: 'OTP sent successfully' };
     }
@@ -107,8 +106,6 @@ export class HomeController {
     @Post('/updateCartInfo')
     @HttpCode(200)
     async updateCartInfo(@Req() request: Request) {
-        console.log('Req', request)
-        console.log('Req1', request.body)
         return await this.homeService.updateCartInfo(request.body);
     }
     
@@ -152,6 +149,17 @@ export class HomeController {
     @HttpCode(200)
     async getSavedAddress(@Req() request: Request) {
         return await this.homeService.getSavedAddress(request.body);
+    }
+    
+    @Post('/getExploreCategoryProduct')
+    @HttpCode(200)
+    async getExploreCategoryProduct(@Req() request: Request) {
+        return await this.homeService.getExploreCategoryProduct(request.body);
+    }
+    @Post('/addOrder')
+    @HttpCode(200)
+    async addOrder(@Req() request: Request) {
+        return await this.homeService.addOrder(request.body);
     }
 
 

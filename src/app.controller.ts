@@ -16,7 +16,6 @@ export class AppController {
 
   @Get('csrf-token')
   getCsrfToken(@Req() req: Request, @Res() res: Response) {
-    console.log('98', 'ayush')
     res.json({ csrfToken: req.csrfToken() });
   }
 

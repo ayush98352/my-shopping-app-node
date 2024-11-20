@@ -54,7 +54,7 @@ export class HomeService {
         const query = 'INSERT IGNORE INTO users.users_list (phone_number) VALUES (?)';
         const params = [phoneNumber];
         try{
-            await this.commonLogicService.dbCallPdoWIBuilder(query, params, 'RAILWAY_CONN');
+            await this.commonLogicService.dbCallPdoWIBuilder(query, params, 'DB_CONN');
             let result = await this.getLoggedInUserDetails(phoneNumber);
             return {"message": 'sucess', code: 200, 'result':result};
         }
@@ -66,7 +66,7 @@ export class HomeService {
     async getLoggedInUserDetails(phoneNumber: string){
         let query = "SELECT * FROM users.users_list WHERE phone_number = ?";
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, [phoneNumber],'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, [phoneNumber],'DB_CONN');
             return result;
         }
         catch{
@@ -78,7 +78,7 @@ export class HomeService {
     async getTopCategories(){
         let query = "SELECT * FROM products.top_categories";
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -90,7 +90,7 @@ export class HomeService {
     async getBrands(){
         let query = "SELECT * FROM products.brands";
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -115,17 +115,17 @@ export class HomeService {
             END AS iswishlisted
         FROM (
             SELECT * 
-            FROM products.products_master 
+            FROM products.products_master
             WHERE category_id = ? AND is_active = 1 AND availability = 'In Stock'
         ) a
         LEFT JOIN users.wishlist b 
             ON a.product_id = b.product_id
-            AND b.user_id = ?`;
+            AND b.user_id = ? limit 100` ;
         
         let whereParams = [category_id, user_id];
 
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -159,7 +159,7 @@ export class HomeService {
 
         
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -192,7 +192,7 @@ export class HomeService {
         let whereParams = [brand_id, user_id];
 
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -205,7 +205,7 @@ export class HomeService {
         let query = "SELECT * FROM products.products_master WHERE product_id = '" + product_id + "'";
 
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -220,7 +220,7 @@ export class HomeService {
         let query = "SELECT IF(count(1)>0, 1, 0) as inWishlist FROM users.wishlist WHERE product_id = ? AND user_id = ?";
         let whereParams = [product_id, user_id];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -234,10 +234,11 @@ export class HomeService {
         let query = "INSERT INTO users.wishlist(user_id, product_id) VALUES(?, ?) ON DUPLICATE KEY UPDATE added_at = CURRENT_TIMESTAMP()";
         let whereParams = [user_id, product_id];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
-        catch{
+        catch(e){
+           console.log(e);
             return {"message": 'error', code: 500, 'result':[]};
         }
     }
@@ -248,7 +249,7 @@ export class HomeService {
         let query = "DELETE FROM users.wishlist WHERE product_id = ? AND user_id = ?";
         let whereParams = [product_id, user_id];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -264,7 +265,7 @@ export class HomeService {
         let whereParams = [user_id];
 
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -280,13 +281,14 @@ export class HomeService {
 
         let checkquery = "SELECT count(1) as count FROM users.cart WHERE user_id = ? AND product_id = ? AND size = ?";
         let checkwhereParams = whereParams;
+
         try{
-            let checkresult = await this.commonLogicService.dbCallPdoWIBuilder(checkquery, checkwhereParams,'RAILWAY_CONN');
+            let checkresult = await this.commonLogicService.dbCallPdoWIBuilder(checkquery, checkwhereParams,'DB_CONN');
 
             if(checkresult[0].count > 0){
                 let query = "UPDATE users.cart SET quantity = quantity + 1 WHERE user_id = ? AND product_id = ? AND size = ?";
                 try{
-                    let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+                    let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
                     return {"message": 'sucess', code: 200, 'result':'quantity updated successfully'};
                 }
                 catch{
@@ -297,7 +299,7 @@ export class HomeService {
                 let query = "INSERT INTO users.cart(user_id, product_id, size) VALUES(?, ?, ?)";
                 
                 try{
-                    let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+                    let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
                     return {"message": 'sucess', code: 200, 'result':'Added to cart successfully'};
                 }
                 catch{
@@ -312,7 +314,7 @@ export class HomeService {
 
     async getCartDetails(request){
         let user_id = request.user_id;
-        let query = `SELECT a.cart_id, a.user_id, a.product_id, a.size, a.quantity, b.brand_name, b.product_short_name, b.main_image, b.selling_price, b.mrp, b.discount_percent
+        let query = `SELECT a.cart_id, a.user_id, a.product_id, a.size, a.quantity, b.brand_name, b.product_short_name, b.images, b.selling_price, b.mrp, b.discount_percent
         FROM users.cart a 
         JOIN products.products_master b 
         ON a.product_id = b.product_id 
@@ -320,7 +322,7 @@ export class HomeService {
         
         let whereParams = [user_id];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -339,7 +341,7 @@ export class HomeService {
         let whereParams = [quantity, size, cart_id];
 
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':'Cart Updated Succesfully'};
         }
         catch{
@@ -354,7 +356,7 @@ export class HomeService {
         let whereParams = [cart_id];
 
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':'Removed Succesfully'};
         }
         catch{
@@ -365,14 +367,17 @@ export class HomeService {
     async getSearchedList(request){
         let searchedText = request.searchedText;
 
-        let query = 
-        `SELECT category_id, category_name, "category_name" as type FROM products.top_categories WHERE category_name LIKE ? 
-        UNION SELECT brand_id, brand_name, "brand_name" as type FROM products.brands WHERE brand_name LIKE ?
-        UNION SELECT product_id, product_short_name, "product_short_name" as type FROM products.products_master WHERE product_short_name LIKE ? 
-        UNION SELECT product_id, product_name, "product_name" as type FROM products.products_master WHERE product_name LIKE ? limit 5`;
-        let whereParams = ['%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%'];
+        // let query = 
+        // `SELECT category_id, category_name, "category_name" as type FROM products.top_categories WHERE category_name LIKE ? 
+        // UNION SELECT brand_id, brand_name, "brand_name" as type FROM products.brands WHERE brand_name LIKE ?
+        // UNION SELECT product_id, product_short_name, "product_short_name" as type FROM products.products_master WHERE product_short_name LIKE ? 
+        // UNION SELECT product_id, product_name, "product_name" as type FROM products.products_master WHERE product_name LIKE ? limit 5`;
+        // let whereParams = ['%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%'];
+
+        let query = `select * from ayush.product_categories where category_name like ? limit 10`;
+        let whereParams = ['%'+searchedText+'%'];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }catch{
             return {"message": 'error', code: 500, 'result':[]};
@@ -533,7 +538,7 @@ export class HomeService {
             request.is_default
         ];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
             return {"message": e, code: 500, 'result':[]};
@@ -546,14 +551,117 @@ export class HomeService {
         let query = `SELECT * FROM users.saved_addresses WHERE user_id = ?`;
         let whereParams = [user_id];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'RAILWAY_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
             return {"message": e, code: 500, 'result':[]};
         }
     }
    
-    
+    async getExploreCategoryProduct(request){
+        let gender = request.gender;
+        let  category = request.category;
+        let sub_category = request.sub_category;
+  
+        let query = `select * from products.products_master where availability = 'In Stock'` ;
 
+        let whereParams = [];
+        if(gender!='Kids'){
+            query += `and ideal_for = ? `
+            whereParams.push(gender);
+        }else{
+            query += `and category_id = '4'`
+        }
+        if (sub_category != 'See all >'){
+            query += `and product_category_name like ?`;
+            whereParams.push('%' + request.sub_category + '%');
+        }
+        else{
+            query += `and product_top_category_name = ?`;
+            whereParams.push(category);
+        }
+
+        query += ` limit 100`;
+
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+
+    formatLocalDateTime() {
+        const now = new Date();
+      
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      }
+
+    async addOrder(request){
+        let user_id = request.user_id;
+     
+        let query = `INSERT INTO users.orders (user_id, order_date, order_status, mrp, product_discount, item_total, promo_discount, coupon_code, delivery_charges, extra_charges, extra_charges_name, tax_amount, total_amount, payment_status, transaction_details, shipping_status, shipping_address, receiver_name, reciever_contact_no, delivery_instructions, payment_method, product_images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        let whereParams = [
+            request.user_id, request.order_date, request.order_status, request.mrp, request.product_discount, request.item_total, request.promo_discount, request.coupon_code, request.delivery_charge, request.extra_charges, request.extra_charges_name, request.tax_amount, request.total_amount, request.payment_status, request.transaction_details, request.shipping_status, request.shipping_address, request.receiver_name, request.reciever_contact_no, request.delivery_instructions, request.payment_method, request.product_images
+        ];
+
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            let order_id = await this.fetchLastOrderId(user_id);
+            if(order_id?.code == 200){
+                order_id = order_id.result[0].order_id;
+            }else{
+                return {"message": 'error', code: 500, 'result': 'Order Added Successfully'};
+            }
+            result = await this.addOrderItems(order_id, request.order_details);
+            if(result?.code == 200){
+                return {"message": 'success', code: 200, 'result': 'Order Added Successfully'};
+            }else{
+                return {"message": 'error', code: 500, 'result': 'Order Added Successfully'};
+            }
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+
+    async addOrderItems(order_id, order_details){
+        console.log('order_id', order_id);
+        console.log('order_details', order_details);
+            for (const item of order_details) {
+                let query = `INSERT INTO users.order_items (order_id, product_id, product_short_name, brand_name, quantity, size, selling_price, mrp, discount_percent, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                let whereParams = [order_id, item.product_id, item.product_short_name, item.brand_name, item.quantity, item.size, item.selling_price, item.mrp, item.discount_percent, item.images];
+
+                console.log('query', query);
+                console.log('whereParams', whereParams);
+                try{
+                    let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+                    
+                }catch(e){
+                    return {"message": e, code: 500, 'result':[]};
+                }
+            }
+            return {"message": 'success', code: 200, 'result':' Order Items Added Successfully'};
+
+        
+    }
+
+    async fetchLastOrderId(user_id){
+        let query = `SELECT order_id FROM users.orders WHERE user_id = ? ORDER BY order_id DESC LIMIT 1`;
+        let whereParams = [user_id];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            console.log('order_result', result);
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
 
 }
