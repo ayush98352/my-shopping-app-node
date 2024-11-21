@@ -7,6 +7,8 @@ import { lastValueFrom } from 'rxjs';
 
 import { CommonLogicService } from 'src/common-logic/common-logic.service';
 import e from 'express';
+import * as moment from 'moment';
+
 
 @Injectable()
 export class HomeService {
@@ -632,24 +634,18 @@ export class HomeService {
     }
 
     async addOrderItems(order_id, order_details){
-        console.log('order_id', order_id);
-        console.log('order_details', order_details);
-            for (const item of order_details) {
-                let query = `INSERT INTO users.order_items (order_id, product_id, product_short_name, brand_name, quantity, size, selling_price, mrp, discount_percent, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-                let whereParams = [order_id, item.product_id, item.product_short_name, item.brand_name, item.quantity, item.size, item.selling_price, item.mrp, item.discount_percent, item.images];
+        for (const item of order_details) {
+            let query = `INSERT INTO users.order_items (order_id, product_id, product_short_name, brand_name, quantity, size, selling_price, mrp, discount_percent, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            let whereParams = [order_id, item.product_id, item.product_short_name, item.brand_name, item.quantity, item.size, item.selling_price, item.mrp, item.discount_percent, item.images];
 
-                console.log('query', query);
-                console.log('whereParams', whereParams);
-                try{
-                    let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
-                    
-                }catch(e){
-                    return {"message": e, code: 500, 'result':[]};
-                }
+            try{
+                let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+                
+            }catch(e){
+                return {"message": e, code: 500, 'result':[]};
             }
-            return {"message": 'success', code: 200, 'result':' Order Items Added Successfully'};
-
-        
+        }
+        return {"message": 'success', code: 200, 'result':' Order Items Added Successfully'};
     }
 
     async fetchLastOrderId(user_id){
@@ -657,7 +653,22 @@ export class HomeService {
         let whereParams = [user_id];
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
-            console.log('order_result', result);
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+
+    async getOrdersList(request){
+        let user_id = request.user_id;
+        let query = `SELECT * FROM users.orders WHERE user_id = ? ORDER BY order_id DESC limit 10`;
+        let whereParams = [user_id];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            result.forEach((item) => {
+                item.order_date = moment(item?.order_date).format('DD MMM YYYY HH:mm:ss');    
+                item.shipping_address = JSON.parse(item?.shipping_address);       
+            });
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
             return {"message": e, code: 500, 'result':[]};

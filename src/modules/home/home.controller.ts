@@ -161,6 +161,11 @@ export class HomeController {
     async addOrder(@Req() request: Request) {
         return await this.homeService.addOrder(request.body);
     }
+    @Post('/getOrdersList')
+    @HttpCode(200)
+    async getOrdersList(@Req() request: Request) {
+        return await this.homeService.getOrdersList(request.body);
+    }
 
 
     // POST /send-otp
