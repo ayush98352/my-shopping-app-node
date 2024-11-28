@@ -10,6 +10,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthMiddleware } from './middleware/auth.middleware';
 import { PaymentModule } from './modules/payment/payment.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 // import { CsrfModule } from './_csrf/csrf.module';
 
 
@@ -32,6 +34,10 @@ import { PaymentModule } from './modules/payment/payment.module';
     HomeModule,
     AuthModule,
     PaymentModule, 
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],

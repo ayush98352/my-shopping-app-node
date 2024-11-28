@@ -674,5 +674,80 @@ export class HomeService {
             return {"message": e, code: 500, 'result':[]};
         }
     }
+    
+    async getOrderItemsList(request){
+        let order_id = request.order_id;
+        let query = `SELECT a.* , b.rating, b.review_text, b.review_date, b.review_image
+        FROM users.order_items a
+        LEFT JOIN users.user_reviews b
+        ON a.product_id = b.product_id and a.order_id = b.order_id
+        WHERE a.order_id = ? 
+        ORDER BY order_item_id`;
+
+        let whereParams = [order_id];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+
+    async addDeliveryManRating(request){
+        let query = `UPDATE users.order_items SET delivery_man_rating = ?
+        WHERE order_id = ? `;
+        let whereParams = [request?.delivery_man_rating, request?.order_id];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+
+    async addProductReviewRating(request){
+        let items = request.items;
+
+        // let checkQuery = `SELECT count(1) FROM users.user_reviews WHERE user_id = ? AND order_id = ? AND product_id = ?`;
+        for (const item of items) {
+            if(item?.rating > 0){
+                let checkQuery = `SELECT count(1) as count FROM users.user_reviews WHERE user_id = ? AND order_id = ? AND product_id = ?`;
+                let checkWhereParams = [request?.user_id, request?.order_id, item?.product_id];
+                let checkResult = await this.commonLogicService.dbCallPdoWIBuilder(checkQuery, checkWhereParams,'DB_CONN');
+                
+                if(checkResult[0]?.count == 0){
+                    // add review
+                    let query = `INSERT INTO users.user_reviews (user_id, order_id, product_id, rating, review_text, review_image, review_date) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+                    let whereParams = [request?.user_id, request?.order_id, item?.product_id, item?.rating, item?.review, item?.photos, item?.review_date];
+                    console.log('add-query', query)
+                    console.log('whereParams', whereParams)
+                    try{
+                        await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+                    
+                    }catch(e){
+                        console.log('e', e)
+                        return {"message": e, code: 500, 'result':[]};
+                    }
+                }
+                else{
+                    // update review
+                    let query = `UPDATE users.user_reviews SET rating = ?, review_text = ?, review_image = ?, review_date = ?
+                    WHERE user_id = ? AND order_id = ? AND product_id = ?`;
+                    let whereParams = [item?.rating, item?.review, item?.photos, item?.review_date, request?.user_id, request?.order_id, item?.product_id];
+                    console.log('update-query', query)
+                    console.log('whereParams', whereParams)
+                    try{
+                        await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+
+                    }catch(e){
+                        console.log('e', e)
+                        return {"message": e, code: 500, 'result':[]};
+                    }
+                }
+            }
+        }
+        return {"message": 'success', code: 200, 'result':' Order Items Added Successfully'};
+    }
 
 }

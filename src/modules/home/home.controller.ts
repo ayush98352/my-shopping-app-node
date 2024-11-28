@@ -1,6 +1,16 @@
 import { Controller, Get, HttpCode, Post , Body, Req, Query, Request} from '@nestjs/common';
 import { HomeService } from './home.service';
 
+import { 
+    UseInterceptors, 
+    UploadedFile,
+    BadRequestException 
+  } from '@nestjs/common';
+  import { FileInterceptor } from '@nestjs/platform-express';
+  import { diskStorage } from 'multer';
+  import { extname } from 'path';
+  
+
 @Controller('home')
 export class HomeController {
     constructor(private readonly homeService: HomeService) {}
@@ -165,7 +175,108 @@ export class HomeController {
     @HttpCode(200)
     async getOrdersList(@Req() request: Request) {
         return await this.homeService.getOrdersList(request.body);
+    } 
+    @Post('/getOrderItemsList')
+    @HttpCode(200)
+    async getOrderItemsList(@Req() request: Request) {
+        return await this.homeService.getOrderItemsList(request.body);
     }
+    @Post('/addProductReviewRating')
+    @HttpCode(200)
+    async addProductReviewRating(@Req() request: Request) {
+        return await this.homeService.addProductReviewRating(request.body);
+    }
+    @Post('/addDeliveryManRating')
+    @HttpCode(200)
+    async addDeliveryManRating(@Req() request: Request) {
+        return await this.homeService.addDeliveryManRating(request.body);
+    }
+
+
+    @Post('upload-photo')
+    @UseInterceptors(FileInterceptor('photo', {
+        storage: diskStorage({
+            destination: './uploads',  // Specify the destination directory
+            filename: (req, file, callback) => {
+            const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+            // Ensure the filename is passed back to the callback
+            callback(null, `${uniqueSuffix}${extname(file.originalname)}`);
+            },
+        }),
+        fileFilter: (req, file, callback) => {
+            if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+            return callback(new BadRequestException('Only image files are allowed!'), false);
+            }
+            callback(null, true);
+        },
+        limits: {
+            fileSize: 5 * 1024 * 1024 // 5MB
+        }
+    }))
+    async uploadFile(
+        @UploadedFile() file: Express.Multer.File,
+        @Body() body: any
+    ) {
+        console.log('Uploaded file:', file);
+        
+        if (!file) {
+            throw new BadRequestException('No file uploaded');
+        }
+
+        // Construct the URL for the uploaded file
+        // const baseUrl = process.env.BASE_URL || 'http://localhost:7399';
+        console.log( 'process.env.BASE_URL',  process.env.BASE_URL)
+        const baseUrl = 'http://localhost:7399';
+        const fileUrl = `${baseUrl}/uploads/${file.filename}`;
+
+        console.log('fileUrl:', fileUrl);
+
+        return {
+            url: fileUrl,
+            message: 'File uploaded successfully'
+        };
+    }
+
+
+
+    // @Post('upload-photo')
+    // @UseInterceptors(FileInterceptor('photo', {
+    //     storage: diskStorage({
+    //     destination: './uploads',
+    //     filename: (req, file, callback) => {
+    //         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    //     },
+    //     }),
+    //     fileFilter: (req, file, callback) => {
+    //     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+    //         return callback(new BadRequestException('Only image files are allowed!'), false);
+    //     }
+    //     callback(null, true);
+    //     },
+    //     limits: {
+    //         fileSize: 5 * 1024 * 1024 // 5MB
+    //     }
+    // }))
+    // async uploadFile(
+    //     @UploadedFile() file: Express.Multer.File,
+    //     @Body() body: any
+    // ) {
+    //     console.log('filee', file);
+    //     if (!file) {
+    //         throw new BadRequestException('No file uploaded');
+    //     }
+
+    //     // Construct the URL for the uploaded file
+    //     const baseUrl = process.env.BASE_URL || 'http://localhost:7399';
+    //     const fileUrl = `${baseUrl}/uploads/${file.filename}`;
+
+    //     console.log('fileUrl', fileUrl);
+
+    //     return {
+    //     url: fileUrl,
+    //     message: 'File uploaded successfully'
+    //     };
+    // }
 
 
     // POST /send-otp
