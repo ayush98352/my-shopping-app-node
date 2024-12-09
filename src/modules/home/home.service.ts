@@ -376,7 +376,8 @@ export class HomeService {
         // UNION SELECT product_id, product_name, "product_name" as type FROM products.products_master WHERE product_name LIKE ? limit 5`;
         // let whereParams = ['%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%'];
 
-        let query = `select * from ayush.product_categories where category_name like ? limit 10`;
+        // let query = `select * from ayush.product_categories where category_name like ? limit 10`;
+        let query = `select * from products.product_categories where category_name like ? limit 10`;
         let whereParams = ['%'+searchedText+'%'];
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
@@ -626,7 +627,7 @@ export class HomeService {
             if(result?.code == 200){
                 return {"message": 'success', code: 200, 'result': 'Order Added Successfully'};
             }else{
-                return {"message": 'error', code: 500, 'result': 'Order Added Successfully'};
+                return {"message": result?.message, code: 500, 'result': 'Order Was not Added Successfully'};
             }
         }catch(e){
             return {"message": e, code: 500, 'result':[]};
@@ -720,13 +721,10 @@ export class HomeService {
                     // add review
                     let query = `INSERT INTO users.user_reviews (user_id, order_id, product_id, rating, review_text, review_image, review_date) VALUES (?, ?, ?, ?, ?, ?, ?)`;
                     let whereParams = [request?.user_id, request?.order_id, item?.product_id, item?.rating, item?.review, item?.photos, item?.review_date];
-                    console.log('add-query', query)
-                    console.log('whereParams', whereParams)
                     try{
                         await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
                     
                     }catch(e){
-                        console.log('e', e)
                         return {"message": e, code: 500, 'result':[]};
                     }
                 }
@@ -735,19 +733,40 @@ export class HomeService {
                     let query = `UPDATE users.user_reviews SET rating = ?, review_text = ?, review_image = ?, review_date = ?
                     WHERE user_id = ? AND order_id = ? AND product_id = ?`;
                     let whereParams = [item?.rating, item?.review, item?.photos, item?.review_date, request?.user_id, request?.order_id, item?.product_id];
-                    console.log('update-query', query)
-                    console.log('whereParams', whereParams)
                     try{
                         await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
 
                     }catch(e){
-                        console.log('e', e)
                         return {"message": e, code: 500, 'result':[]};
                     }
                 }
             }
         }
         return {"message": 'success', code: 200, 'result':' Order Items Added Successfully'};
+    }
+
+    async getMallsList(request){
+        let user_lat = request.latitude;
+        let user_lon = request.longitude;
+        let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance`;        
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, [],'DB_CONN');
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+
+    async getShopsList(request){
+        let user_lat = request.latitude;
+        let user_lon = request.longitude;
+        let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance`;
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, [],'DB_CONN');
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
     }
 
 }

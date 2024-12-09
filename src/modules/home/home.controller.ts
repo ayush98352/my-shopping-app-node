@@ -191,6 +191,16 @@ export class HomeController {
     async addDeliveryManRating(@Req() request: Request) {
         return await this.homeService.addDeliveryManRating(request.body);
     }
+    @Post('/getMallsList')
+    @HttpCode(200)
+    async getMallsList(@Req() request: Request) {
+        return await this.homeService.getMallsList(request.body);
+    }
+    @Post('/getShopsList')
+    @HttpCode(200)
+    async getShopsList(@Req() request: Request) {
+        return await this.homeService.getShopsList(request.body);
+    }
 
 
     @Post('upload-photo')
