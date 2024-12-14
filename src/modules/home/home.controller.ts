@@ -201,6 +201,11 @@ export class HomeController {
     async getShopsList(@Req() request: Request) {
         return await this.homeService.getShopsList(request.body);
     }
+    @Post('/getMallsStoresList')
+    @HttpCode(200)
+    async getMallsStoresList(@Req() request: Request) {
+        return await this.homeService.getMallsStoresList(request.body);
+    }
 
 
     @Post('upload-photo')

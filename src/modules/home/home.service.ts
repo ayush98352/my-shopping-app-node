@@ -769,4 +769,16 @@ export class HomeService {
         }
     }
 
+    async getMallsStoresList(request){
+
+        let query = `SELECT * FROM products.stores where mall_id = ?`;
+        let whereParams = [request.mall_id];
+        try{
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
+            return {"message": 'success', code: 200, 'result':result};
+        }catch(e){
+            return {"message": e, code: 500, 'result':[]};
+        }
+    }
+
 }
