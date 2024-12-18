@@ -104,6 +104,8 @@ export class HomeService {
     async getSelectedCategoryProduct(request){
         let category_id = request.category_id;
         let user_id = request.user_id;
+        let limit = request?.limit ? request?.limit : 30;
+        let offset = request?.offset ? request?.offset : 0;
 
 
         // let query = "SELECT * FROM products.products_master where category_id = '"+category_id+"'";
@@ -122,9 +124,9 @@ export class HomeService {
         ) a
         LEFT JOIN users.wishlist b 
             ON a.product_id = b.product_id
-            AND b.user_id = ? limit 100` ;
+            AND b.user_id = ? limit ? OFFSET ?` ;
         
-        let whereParams = [category_id, user_id];
+        let whereParams = [category_id, user_id, limit, offset];
 
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
@@ -137,6 +139,10 @@ export class HomeService {
 
     async getRecommenedProducts(request){
         let user_id = request.user_id;
+        let limit = request?.limit ? request?.limit : 10;
+        let offset = request?.offset ? request?.offset : 0;
+
+        
         // let query = "SELECT * FROM products.products_master WHERE is_active = 1 AND availability = 'In Stock' ORDER BY discount_percent DESC LIMIT 10";
         let query = `SELECT 
                     a.*, 
@@ -150,15 +156,14 @@ export class HomeService {
                     WHERE is_active = 1 
                     AND availability = 'In Stock' 
                     ORDER BY discount_percent DESC 
-                    LIMIT 10
+                    LIMIT ? OFFSET ?
                 ) a
                 LEFT JOIN users.wishlist b 
                     ON a.product_id = b.product_id
                     AND b.user_id = ?`;
 
         
-        let whereParams = [user_id];
-
+        let whereParams = [limit, offset, user_id];
         
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
@@ -172,6 +177,8 @@ export class HomeService {
     async getSelectedBrandProduct(request){
         let brand_id = request.brand_id;
         let user_id = request.user_id;
+        let limit = request?.limit ? request?.limit : 30;
+        let offset = request?.offset ? request?.offset : 0;
 
         // let query = "SELECT * FROM products.products_master WHERE brand_id = '" + brand_id + "'";
         // query += "AND availability = 'In Stock' AND is_active = 1";
@@ -189,9 +196,9 @@ export class HomeService {
         ) a
         LEFT JOIN users.wishlist b 
             ON a.product_id = b.product_id
-            AND b.user_id = ?`;
+            AND b.user_id = ? limit ? OFFSET ?`;
         
-        let whereParams = [brand_id, user_id];
+        let whereParams = [brand_id, user_id, limit, offset];
 
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
@@ -565,6 +572,8 @@ export class HomeService {
         let gender = request.gender;
         let  category = request.category;
         let sub_category = request.sub_category;
+        let limit = request?.limit ? request?.limit : 30;
+        let offset = request?.offset ? request?.offset : 0;
   
         let query = `select * from products.products_master where availability = 'In Stock'` ;
 
@@ -584,7 +593,9 @@ export class HomeService {
             whereParams.push(category);
         }
 
-        query += ` limit 100`;
+        query += ` limit ? OFFSET ?`;
+        whereParams.push(limit);
+        whereParams.push(offset);
 
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
