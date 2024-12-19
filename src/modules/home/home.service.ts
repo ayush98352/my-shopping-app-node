@@ -269,9 +269,11 @@ export class HomeService {
 
     async getWishlistedProducts(request){
         let user_id = request.user_id;
+        let limit = request?.limit ? request?.limit : 10;
+        let offset = request?.offset ? request?.offset : 0;
 
-        let query = "select b.* from users.wishlist a join products.products_master b on a.product_id=b.product_id where a.user_id = ?"
-        let whereParams = [user_id];
+        let query = "select b.* from users.wishlist a join products.products_master b on a.product_id=b.product_id where a.user_id = ? order by a.wishlist_id desc limit ? OFFSET ?"
+        let whereParams = [user_id, limit, offset];
 
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
