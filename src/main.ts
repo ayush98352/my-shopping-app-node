@@ -35,7 +35,8 @@ async function bootstrap() {
       'http://localhost:4200',
       'https://lovely-sorbet-eaaf67.netlify.app/',
       'https://lovely-sorbet-eaaf67.netlify.app',
-      'https://localhost'
+      'https://localhost',
+      'capacitor://localhost'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
