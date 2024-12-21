@@ -23,28 +23,48 @@ async function bootstrap() {
   // const configService = new ConfigService('.env');
   const csrfProtection = csurf({ cookie: { httpOnly: true } });
 
-  app.use((req, res, next) => {
+   app.use((req, res, next) => {
     console.log('Incoming request origin:', req.headers.origin);
     next();
   });
   
   
+  // app.enableCors({
+  //   // origin: '*',
+  //   origin: [
+  //     'http://localhost:4200',
+  //     'https://lovely-sorbet-eaaf67.netlify.app/',
+  //     'https://lovely-sorbet-eaaf67.netlify.app',
+  //     'https://localhost'
+  //   ],
+  //   methods: ['GET', 'POST', 'OPTIONS'],
+  //   allowedHeaders: [
+  //     'Content-Type',
+  //     'Authorization',
+  //     'X-CSRF-Token',
+  //     'Access-Control-Allow-Origin'  // Add this if necessary
+  //   ],
+  //   credentials: true,
+  // });
+
   app.enableCors({
-    // origin: '*',
     origin: [
-      '*',
       'http://localhost:4200',
       'https://lovely-sorbet-eaaf67.netlify.app/',
       'https://lovely-sorbet-eaaf67.netlify.app',
-      'https://localhost'
+      'https://localhost',
+      'https://loud-crayfish-zendo-ca8afaac.koyeb.app'
     ],
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
       'X-CSRF-Token',
-      'Access-Control-Allow-Origin'  // Add this if necessary
+      'Access-Control-Allow-Origin',
+      'Origin',
+      'Accept'
     ],
+    exposedHeaders: ['Access-Control-Allow-Origin'],
     credentials: true,
   });
   app.use(cookieParser());
