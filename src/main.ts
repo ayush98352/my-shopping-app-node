@@ -29,25 +29,8 @@ async function bootstrap() {
   });
   
   
-  // app.enableCors({
-  //   // origin: '*',
-  //   origin: [
-  //     'http://localhost:4200',
-  //     'https://lovely-sorbet-eaaf67.netlify.app/',
-  //     'https://lovely-sorbet-eaaf67.netlify.app',
-  //     'https://localhost'
-  //   ],
-  //   methods: ['GET', 'POST', 'OPTIONS'],
-  //   allowedHeaders: [
-  //     'Content-Type',
-  //     'Authorization',
-  //     'X-CSRF-Token',
-  //     'Access-Control-Allow-Origin'  // Add this if necessary
-  //   ],
-  //   credentials: true,
-  // });
-
   app.enableCors({
+    // origin: '*',
     origin: [
       'http://localhost:4200',
       'https://lovely-sorbet-eaaf67.netlify.app/',
@@ -67,6 +50,27 @@ async function bootstrap() {
     exposedHeaders: ['Access-Control-Allow-Origin'],
     credentials: true,
   });
+
+  // app.enableCors({
+  //   origin: [
+  //     'http://localhost:4200',
+  //     'https://lovely-sorbet-eaaf67.netlify.app/',
+  //     'https://lovely-sorbet-eaaf67.netlify.app',
+  //     'https://localhost',
+  //     'https://loud-crayfish-zendo-ca8afaac.koyeb.app'
+  //   ],
+  //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  //   allowedHeaders: [
+  //     'Content-Type',
+  //     'Authorization',
+  //     'X-CSRF-Token',
+  //     'Access-Control-Allow-Origin',
+  //     'Origin',
+  //     'Accept'
+  //   ],
+  //   exposedHeaders: ['Access-Control-Allow-Origin'],
+  //   credentials: true,
+  // });
   app.use(cookieParser());
   app.use(helmet());
   app.use(json({ limit: '50mb' }));
