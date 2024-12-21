@@ -26,7 +26,7 @@ async function bootstrap() {
   
   
   app.enableCors({
-    origin: '*',
+    origin: ['*'],
     // origin: [
     //   'http://localhost:4200',
     //   'https://lovely-sorbet-eaaf67.netlify.app/',
