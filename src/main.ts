@@ -35,17 +35,14 @@ async function bootstrap() {
       'http://localhost:4200',
       'https://lovely-sorbet-eaaf67.netlify.app/',
       'https://lovely-sorbet-eaaf67.netlify.app',
-      'https://localhost',
-      'https://loud-crayfish-zendo-ca8afaac.koyeb.app'
+      'https://localhost'
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Authorization',
       'X-CSRF-Token',
-      'Access-Control-Allow-Origin',
-      'Origin',
-      'Accept'
+      'Access-Control-Allow-Origin'
     ],
     exposedHeaders: ['Access-Control-Allow-Origin'],
     credentials: true,
