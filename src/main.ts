@@ -15,7 +15,7 @@ import { AuthMiddleware } from './middleware/auth.middleware'; // Update with th
 
 async function bootstrap() {
   config(); // Load environment variables
-
+ 
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug'],
@@ -23,16 +23,21 @@ async function bootstrap() {
   // const configService = new ConfigService('.env');
   const csrfProtection = csurf({ cookie: { httpOnly: true } });
 
+  app.use((req, res, next) => {
+    console.log('Incoming request origin:', req.headers.origin);
+    next();
+  });
   
   
   app.enableCors({
-    origin: ['*'],
-    // origin: [
-    //   'http://localhost:4200',
-    //   'https://lovely-sorbet-eaaf67.netlify.app/',
-    //   'https://lovely-sorbet-eaaf67.netlify.app',
-    //   'https://localhost'
-    // ],
+    // origin: '*',
+    origin: [
+      '*',
+      'http://localhost:4200',
+      'https://lovely-sorbet-eaaf67.netlify.app/',
+      'https://lovely-sorbet-eaaf67.netlify.app',
+      'https://localhost'
+    ],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -55,10 +60,7 @@ async function bootstrap() {
    // Apply CSRF protection middleware
   //  app.use(csrfProtection);
 
-  app.use((req, res, next) => {
-    console.log('Incoming request origin:', req.headers.origin);
-    next();
-  });
+  
 
    app.use((req: Request, res: Response, next) => {
     // console.log('Incoming CSRF Token:', req.headers['x-csrf-token']);
