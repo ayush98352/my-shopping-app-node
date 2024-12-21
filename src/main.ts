@@ -26,13 +26,13 @@ async function bootstrap() {
   
   
   app.enableCors({
-    // origin: '*',
-    origin: [
-      'http://localhost:4200',
-      'https://lovely-sorbet-eaaf67.netlify.app/',
-      'https://lovely-sorbet-eaaf67.netlify.app',
-      'https://localhost'
-    ],
+    origin: '*',
+    // origin: [
+    //   'http://localhost:4200',
+    //   'https://lovely-sorbet-eaaf67.netlify.app/',
+    //   'https://lovely-sorbet-eaaf67.netlify.app',
+    //   'https://localhost'
+    // ],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
