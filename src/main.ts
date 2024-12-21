@@ -26,12 +26,9 @@ async function bootstrap() {
   
   
   app.enableCors({
+    // origin: '*',
     origin: [
       'http://localhost:4200',
-      'https://ayush98352.github.io/my_shopping_app',
-      'https://ayush98352.github.io/my-app',
-      'https://ayush98352.github.io/my_shopping_app/',
-      'https://ayush98352.github.io/my-app/',
       'https://lovely-sorbet-eaaf67.netlify.app/',
       'https://lovely-sorbet-eaaf67.netlify.app',
       'https://localhost'
@@ -57,6 +54,11 @@ async function bootstrap() {
   
    // Apply CSRF protection middleware
   //  app.use(csrfProtection);
+
+  app.use((req, res, next) => {
+    console.log('Incoming request origin:', req.headers.origin);
+    next();
+  });
 
    app.use((req: Request, res: Response, next) => {
     // console.log('Incoming CSRF Token:', req.headers['x-csrf-token']);

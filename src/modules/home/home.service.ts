@@ -91,12 +91,13 @@ export class HomeService {
 
     async getBrands(){
         let query = "SELECT * FROM products.brands";
+        console.log('brand', query);
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
-        catch{
-            return {"message": 'error', code: 500, 'result':[]};
+        catch(e){
+            return {"message": 'error', code: 500, 'result':{e}};
         }
 
     }
@@ -164,13 +165,15 @@ export class HomeService {
 
         
         let whereParams = [limit, offset, user_id];
+        console.log('query', query);
+        console.log(whereParams, 'whereParams');
         
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
-        catch{
-            return {"message": 'error', code: 500, 'result':[]};
+        catch(e){
+            return {"message": 'error', code: 500, 'result': {e}};
         }
     }
 
@@ -761,9 +764,16 @@ export class HomeService {
     async getMallsList(request){
         let user_lat = request.latitude;
         let user_lon = request.longitude;
-        let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance`;        
+        let limit = request?.limit ? request?.limit : 5;
+        let offset = request?.offset ? request?.offset : 0;
+
+        // let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance  limit ? OFFSET ?`;
+
+        let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance  limit ? OFFSET ?`;
+
+        let whereParms = [user_lat, user_lon, user_lat, limit, offset];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, [],'DB_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParms,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
             return {"message": e, code: 500, 'result':[]};
@@ -773,9 +783,16 @@ export class HomeService {
     async getShopsList(request){
         let user_lat = request.latitude;
         let user_lon = request.longitude;
-        let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance`;
+        let limit = request?.limit ? request?.limit : 10;
+        let offset = request?.offset ? request?.offset : 0;
+
+        // let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance`;
+
+        let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance limit ? OFFSET ?`;
+
+        let whereParms = [user_lat, user_lon, user_lat, limit, offset];
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, [],'DB_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParms,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
             return {"message": e, code: 500, 'result':[]};
