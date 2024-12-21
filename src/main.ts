@@ -23,10 +23,10 @@ async function bootstrap() {
   // const configService = new ConfigService('.env');
   const csrfProtection = csurf({ cookie: { httpOnly: true } });
 
-   app.use((req, res, next) => {
-    console.log('Incoming request origin:', req.headers.origin);
-    next();
-  });
+  // app.use((req, res, next) => {
+  //   console.log('Incoming request origin:', req.headers.origin);
+  //   next();
+  // });
   
   
   app.enableCors({

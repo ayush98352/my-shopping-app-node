@@ -91,7 +91,6 @@ export class HomeService {
 
     async getBrands(){
         let query = "SELECT * FROM products.brands";
-        console.log('brand', query);
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
@@ -165,8 +164,6 @@ export class HomeService {
 
         
         let whereParams = [limit, offset, user_id];
-        console.log('query', query);
-        console.log(whereParams, 'whereParams');
         
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
