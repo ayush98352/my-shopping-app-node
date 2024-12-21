@@ -45,7 +45,6 @@ async function bootstrap() {
       'X-CSRF-Token',
       'Access-Control-Allow-Origin'
     ],
-    exposedHeaders: ['Access-Control-Allow-Origin'],
     credentials: true,
   });
 
