@@ -763,12 +763,20 @@ export class HomeService {
         let user_lon = request.longitude;
         let limit = request?.limit ? request?.limit : 5;
         let offset = request?.offset ? request?.offset : 0;
+        let searchedText = request?.searchText ? request?.searchText : '';
 
         // let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance  limit ? OFFSET ?`;
 
         let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance  limit ? OFFSET ?`;
 
         let whereParms = [user_lat, user_lon, user_lat, limit, offset];
+
+        if(searchedText != ''){
+            query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls WHERE name LIKE ? ORDER BY distance  limit ? OFFSET ?`;
+
+            whereParms = [user_lat, user_lon, user_lat, '%'+searchedText+'%', limit, offset];
+        }
+
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParms,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
@@ -782,12 +790,19 @@ export class HomeService {
         let user_lon = request.longitude;
         let limit = request?.limit ? request?.limit : 10;
         let offset = request?.offset ? request?.offset : 0;
+        let searchedText = request?.searchText ? request?.searchText : '';
 
         // let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance`;
 
         let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance limit ? OFFSET ?`;
-
         let whereParms = [user_lat, user_lon, user_lat, limit, offset];
+
+        if(searchedText != ''){
+            query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores WHERE name LIKE ? ORDER BY distance limit ? OFFSET ?`;
+
+            whereParms = [user_lat, user_lon, user_lat, '%'+searchedText+'%', limit, offset];
+        }
+
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParms,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
