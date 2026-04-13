@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, firstValueFrom } from 'rxjs';
 
 
 import { CommonLogicService } from 'src/common-logic/common-logic.service';
@@ -399,73 +399,49 @@ export class HomeService {
     }
 
     async getUserLocation(request){
-        let lon = request.lon;
-        let lat = request.lat;
+        try{
+            let lon = request.lon;
+            let lat = request.lat;
 
-        const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
-        const response = await lastValueFrom(this.httpService.get(url));
-        const locationData = response.data;
+            const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
+            const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
+            const response = await lastValueFrom(this.httpService.get(url));
+            const locationData = response.data;
+            
+            if (locationData.status !== 'OK' || !locationData.results.length) {
+                throw new Error(`Geocoding failed: ${locationData.status} - ${locationData.error_message}`);
+            }
 
-        // Format the response to match your desired structure
-        const formattedResponse = {
-        is_serviceable: true,
-        poi_data: { /* your polygon data here */ },
-        location_info: {
-            sublocalities: locationData.results[0].address_components.filter((c: any) => c.types.includes('sublocality')),
-            city: locationData.results[0].address_components.find((c: any) => c.types.includes('locality')).long_name,
-            district: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_2')).long_name,
-            state: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_1')).long_name,
-            country: locationData.results[0].address_components.find((c: any) => c.types.includes('country')).long_name,
-            postal_code: locationData.results[0].address_components.find((c: any) => c.types.includes('postal_code')).long_name,
-            formatted_address: locationData.results[0].formatted_address
-        },
-        display_address: {
-            title: locationData.results[0].address_components.find((c: any) => c.types.includes('sublocality'))?.long_name || '',
-            description: locationData.results[0].formatted_address,
-            address_line: locationData.results[0].formatted_address
-        },
-        coordinate: {
-            lat: lat,
-            lon: lon
+            // Format the response to match your desired structure
+            const formattedResponse = {
+            is_serviceable: true,
+            poi_data: { /* your polygon data here */ },
+            location_info: {
+                sublocalities: locationData.results[0].address_components.filter((c: any) => c.types.includes('sublocality')),
+                city: locationData.results[0].address_components.find((c: any) => c.types.includes('locality')).long_name,
+                district: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_2')).long_name,
+                state: locationData.results[0].address_components.find((c: any) => c.types.includes('administrative_area_level_1')).long_name,
+                country: locationData.results[0].address_components.find((c: any) => c.types.includes('country')).long_name,
+                postal_code: locationData.results[0].address_components.find((c: any) => c.types.includes('postal_code')).long_name,
+                formatted_address: locationData.results[0].formatted_address
+            },
+            display_address: {
+                title: locationData.results[0].address_components.find((c: any) => c.types.includes('sublocality'))?.long_name || '',
+                description: locationData.results[0].formatted_address,
+                address_line: locationData.results[0].formatted_address
+            },
+            coordinate: {
+                lat: lat,
+                lon: lon
+            }
+            };
+
+
+            
+            return formattedResponse;
+        }catch(e){
+            return {"message": 'error: '+e, 'code': 500, 'result':[]};
         }
-        };
-
-
-        // const formattedResponse = {
-        //     "is_serviceable": true,
-        //     "poi_data": {},
-        //     "location_info": {
-        //         "sublocalities": [
-        //             {
-        //                 "long_name": "Devin Paradise Enclave",
-        //                 "short_name": "Devin Paradise Enclave",
-        //                 "types": [
-        //                     "political",
-        //                     "sublocality",
-        //                     "sublocality_level_2"
-        //                 ]
-        //             }
-        //         ],
-        //         "city": "Bengaluru",
-        //         "district": "Bangalore Division",
-        //         "state": "Karnataka",
-        //         "country": "India",
-        //         "postal_code": "560064",
-        //         "formatted_address": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
-        //     },
-        //     "display_address": {
-        //         "title": "Devin Paradise Enclave",
-        //         "description": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India",
-        //         "address_line": "TOWER-F, DEVIN PARADISE ENCLAVE, Nikoo Homes 2 Rd, Devin Paradise Enclave, Bengaluru, Nagareshwara - Nagenahalli, Karnataka 560064, India"
-        //     },
-        //     "coordinate": {
-        //         "lat": "13.0805688",
-        //         "lon": "77.6401022"
-        //     }
-        // }
-        
-        return formattedResponse;
     }
 
     async fetchPlaceSuggestions(request) {

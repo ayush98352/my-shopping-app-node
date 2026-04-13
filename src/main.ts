@@ -26,8 +26,11 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:4200',
+      'http://localhost:8200',
       'https://lovely-sorbet-eaaf67.netlify.app/',
       'https://lovely-sorbet-eaaf67.netlify.app',
+      'https://zendo-kart.netlify.app/',
+      'https://zendo-kart.netlify.app',
       'https://localhost',
       'capacitor://localhost'
     ],
