@@ -128,7 +128,8 @@ export class HomeController {
     @Post('/getSearchedList')
     @HttpCode(200)
     async getSearchedList(@Req() request: Request) {
-        return await this.homeService.getSearchedList(request.body);
+        const lang = ((request.headers['accept-language'] as string) ?? 'en').toLowerCase().trim();
+        return await this.homeService.getSearchedList(request.body, lang);
     }
     
     @Post('/getUserLocation')
@@ -164,7 +165,8 @@ export class HomeController {
     @Post('/getExploreCategoryProduct')
     @HttpCode(200)
     async getExploreCategoryProduct(@Req() request: Request) {
-        return await this.homeService.getExploreCategoryProduct(request.body);
+        const lang = ((request.headers['accept-language'] as string) ?? 'en').toLowerCase().trim();
+        return await this.homeService.getExploreCategoryProduct(request.body, lang);
     }
     @Post('/addOrder')
     @HttpCode(200)

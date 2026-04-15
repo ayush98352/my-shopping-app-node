@@ -1,20 +1,72 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { lastValueFrom, firstValueFrom } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 
 
 import { CommonLogicService } from 'src/common-logic/common-logic.service';
-import e from 'express';
+import { TranslationService } from './translation.service';
 import * as moment from 'moment';
 
 
 @Injectable()
-export class HomeService {
+export class HomeService implements OnModuleInit {
     private otps = new Map(); // Store OTPs temporarily in-memory (can use Redis or DB in production)
 
-    constructor(private readonly commonLogicService: CommonLogicService, private readonly jwtService: JwtService, private configService: ConfigService, private httpService: HttpService) {}
+    constructor(private readonly commonLogicService: CommonLogicService, private readonly jwtService: JwtService, private configService: ConfigService, private httpService: HttpService, private readonly translationService: TranslationService) {}
+
+    onModuleInit() {
+        // Fire-and-forget: pre-warm translation cache from DB so first real requests are instant
+        this.preWarmTranslations().catch(() => {});
+    }
+
+    private async preWarmTranslations() {
+        try {
+            // Fields that need translation (meaning conversion)
+            const translateQueries = [
+                `SELECT DISTINCT category_name as val FROM products.top_categories WHERE category_name IS NOT NULL`,
+                `SELECT DISTINCT category_name as val FROM products.product_categories WHERE category_name IS NOT NULL`,
+                `SELECT DISTINCT ideal_for as val FROM products.products_master WHERE ideal_for IS NOT NULL`,
+                `SELECT DISTINCT product_short_name as val FROM products.products_master WHERE product_short_name IS NOT NULL LIMIT 500`,
+            ];
+
+            // Fields that need transliteration (phonetic conversion — proper nouns)
+            const transliterateQueries = [
+                `SELECT DISTINCT brand_name as val FROM products.brands WHERE brand_name IS NOT NULL`,
+                `SELECT DISTINCT name as val FROM products.stores WHERE name IS NOT NULL`,
+                `SELECT DISTINCT name as val FROM products.malls WHERE name IS NOT NULL`,
+            ];
+
+            const translateStrings: string[] = [];
+            for (const q of translateQueries) {
+                try {
+                    const rows: any[] = await this.commonLogicService.dbCallPdoWIBuilder(q, [], 'DB_CONN');
+                    for (const row of rows) {
+                        if (row.val) translateStrings.push(row.val);
+                    }
+                } catch { /* skip if table doesn't exist */ }
+            }
+
+            const transliterateStrings: string[] = [];
+            for (const q of transliterateQueries) {
+                try {
+                    const rows: any[] = await this.commonLogicService.dbCallPdoWIBuilder(q, [], 'DB_CONN');
+                    for (const row of rows) {
+                        if (row.val) transliterateStrings.push(row.val);
+                    }
+                } catch { /* skip if table doesn't exist */ }
+            }
+
+            // Run both in parallel
+            await Promise.all([
+                this.translationService.preWarm(translateStrings, 'en', 'hi'),
+                this.translationService.preWarmTransliteration(transliterateStrings, 'hi'),
+            ]);
+        } catch (e) {
+            console.warn('[HomeService] Translation pre-warm failed:', e?.message);
+        }
+    }
 
 
       // Function to generate OTP
@@ -375,27 +427,41 @@ export class HomeService {
         }
     }
 
-    async getSearchedList(request){
-        let searchedText = request.searchedText;
+    async getSearchedList(request, lang = 'en'){
+        let searchedText: string = request.searchedText;
+        let searchTerms: string[] = [searchedText]; // default: search as-is
 
-        // let query = 
-        // `SELECT category_id, category_name, "category_name" as type FROM products.top_categories WHERE category_name LIKE ? 
-        // UNION SELECT brand_id, brand_name, "brand_name" as type FROM products.brands WHERE brand_name LIKE ?
-        // UNION SELECT product_id, product_short_name, "product_short_name" as type FROM products.products_master WHERE product_short_name LIKE ? 
-        // UNION SELECT product_id, product_name, "product_name" as type FROM products.products_master WHERE product_name LIKE ? limit 5`;
-        // let whereParams = ['%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%', '%'+searchedText+'%'];
+        if (lang === 'hi' && searchedText) {
+            const isDevanagari = /[\u0900-\u097F]/.test(searchedText);
 
-        // let query = `select * from ayush.product_categories where category_name like ? limit 10`;
-        let query = `select * from products.product_categories where category_name like ? limit 10`;
-        let whereParams = ['%'+searchedText+'%'];
+            if (isDevanagari) {
+                // Devanagari script: translate directly to English, replace original
+                const en = await this.translationService.translate(searchedText, 'hi', 'en');
+                searchTerms = [en];
+            } else {
+                // Latin script: could be English or Hinglish
+                // Chain: Latin → Devanagari (Google Input Tools) → English (Translate)
+                const devanagari = await this.translationService.transliterate(searchedText, 'hi');
+                if (devanagari && devanagari !== searchedText) {
+                    const enFromHinglish = await this.translationService.translate(devanagari, 'hi', 'en');
+                    // Dual search: original term (works for English) + translated term (works for Hinglish)
+                    searchTerms = [...new Set([searchedText, enFromHinglish])];
+                }
+                // If transliterate returned same string (pure English), searchTerms stays [searchedText]
+            }
+        }
+
+        // Build WHERE clause dynamically: (category_name LIKE ?) OR (category_name LIKE ?)
+        const whereClauses = searchTerms.map(() => 'category_name LIKE ?').join(' OR ');
+        const whereParams = searchTerms.map(t => `%${t}%`);
+        const query = `select * from products.product_categories where (${whereClauses}) limit 10`;
+
         try{
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }catch{
             return {"message": 'error', code: 500, 'result':[]};
         }
-
-        // products.brands
     }
 
     async getUserLocation(request){
@@ -546,25 +612,47 @@ export class HomeService {
         }
     }
    
-    async getExploreCategoryProduct(request){
+    async getExploreCategoryProduct(request, lang = 'en'){
         let gender = request.gender;
-        let  category = request.category;
+        let category = request.category;
         let sub_category = request.sub_category;
         let limit = request?.limit ? request?.limit : 30;
         let offset = request?.offset ? request?.offset : 0;
-  
-        let query = `select * from products.products_master where availability = 'In Stock'` ;
+
+        // If params arrive in Hindi (Devanagari), translate them back to English for DB lookup
+        if (lang === 'hi') {
+            if (gender && /[\u0900-\u097F]/.test(gender)) {
+                gender = await this.translationService.translate(gender, 'hi', 'en');
+            }
+            if (category && /[\u0900-\u097F]/.test(category)) {
+                category = await this.translationService.translate(category, 'hi', 'en');
+            }
+            if (sub_category && sub_category !== 'See all >' && /[\u0900-\u097F]/.test(sub_category)) {
+                sub_category = await this.translationService.translate(sub_category, 'hi', 'en');
+            }
+        }
+
+        let query = `select * from products.products_master where availability = 'In Stock' `;
 
         let whereParams = [];
-        if(gender!='Kids'){
-            query += `and ideal_for = ? `
+        if(gender !== 'kids'){
+            query += `and ideal_for = ? `;
             whereParams.push(gender);
         }else{
-            query += `and category_id = '4'`
+            query += `and category_id = '4' `;
         }
-        if (sub_category != 'See all >'){
-            query += `and product_category_name like ?`;
-            whereParams.push('%' + request.sub_category + '%');
+        if (sub_category !== 'See all >'){
+            // Build both & and "and" variants to handle translation inconsistencies
+            const subVariants = new Set([sub_category]);
+            if (sub_category.includes(' & ')) {
+                subVariants.add(sub_category.replace(/ & /g, ' and '));
+            }
+            if (sub_category.includes(' and ')) {
+                subVariants.add(sub_category.replace(/ and /g, ' & '));
+            }
+            const subConditions = [...subVariants].map(() => 'product_category_name like ?').join(' OR ');
+            query += `and (${subConditions}) `;
+            subVariants.forEach(v => whereParams.push('%' + v + '%'));
         }
         else{
             query += `and product_top_category_name = ?`;

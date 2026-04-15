@@ -10,6 +10,8 @@ import * as csurf from 'csurf';
 import { config } from 'dotenv';
 import { Request, Response } from 'express'; // Import types
 import { AuthMiddleware } from './middleware/auth.middleware'; // Update with the correct path
+import { TranslateResponseInterceptor } from './interceptors/translate-response.interceptor';
+import { TranslationService } from './modules/home/translation.service';
 
 
 
@@ -39,7 +41,8 @@ async function bootstrap() {
       'Content-Type',
       'Authorization',
       'X-CSRF-Token',
-      'Access-Control-Allow-Origin'
+      'Access-Control-Allow-Origin',
+      'Accept-Language',
     ],
     credentials: true,
   });
@@ -118,6 +121,9 @@ async function bootstrap() {
 
   //app.setGlobalPrefix(configService.get('GLOBAL_PREFIX'));
 
+
+  const translationService = app.get(TranslationService);
+  app.useGlobalInterceptors(new TranslateResponseInterceptor(translationService));
 
   const port = process.env.PORT || '7399';
 
