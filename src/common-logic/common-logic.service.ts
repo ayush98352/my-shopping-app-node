@@ -16,28 +16,29 @@ export class CommonLogicService {
 
   }
 
-  decryptData(encryptedMessage) {
-    const crypto = require('crypto');
-    const encryptionMethod = 'AES-256-CBC';
-    const secret = 'sp37charjustdiallndInitbnhytrStr'; //must be 32 char length
-    const iv = secret.substr(0, 16);
-
-    const decryptor = crypto.createDecipheriv(encryptionMethod, secret, iv);
-    return (
-      decryptor.update(encryptedMessage, 'base64', 'utf8') +
-      decryptor.final('utf8')
-    );
-  }
-
   encryptData(message) {
     const crypto = require('crypto');
     const encryptionMethod = 'AES-256-CBC';
-    const secret = 'sp37charjustdiallndInitbnhytrStr'; //must be 32 char length
-    const iv = secret.substr(0, 16);
+    const secret = process.env.ENCRYPTION_SECRET!; // must be 32 char length
+    const iv = crypto.randomBytes(16); // random IV every time
     const encrypter = crypto.createCipheriv(encryptionMethod, secret, iv);
     let encryptedMsg = encrypter.update(message, 'utf8', 'base64');
     encryptedMsg += encrypter.final('base64');
-    return encryptedMsg;
+    // Prepend IV (hex) to ciphertext so we can extract it during decryption
+    return iv.toString('hex') + ':' + encryptedMsg;
+  }
+
+  decryptData(encryptedMessage) {
+    const crypto = require('crypto');
+    const encryptionMethod = 'AES-256-CBC';
+    const secret = process.env.ENCRYPTION_SECRET!; // must be 32 char length
+    const [ivHex, ciphertext] = encryptedMessage.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decryptor = crypto.createDecipheriv(encryptionMethod, secret, iv);
+    return (
+      decryptor.update(ciphertext, 'base64', 'utf8') +
+      decryptor.final('utf8')
+    );
   }
 
   public headers = {};

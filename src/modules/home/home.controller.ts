@@ -1,15 +1,17 @@
-import { Controller, Get, HttpCode, Post , Body, Req, Query, Request} from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Body, Req, Query, Request, UseGuards } from '@nestjs/common';
 import { HomeService } from './home.service';
+import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 
-import { 
-    UseInterceptors, 
+import {
+    UseInterceptors,
     UploadedFile,
-    BadRequestException 
+    BadRequestException
   } from '@nestjs/common';
   import { FileInterceptor } from '@nestjs/platform-express';
   import { diskStorage } from 'multer';
   import { extname } from 'path';
-  
+
 
 @Controller('home')
 export class HomeController {
@@ -17,24 +19,25 @@ export class HomeController {
 
     @Post('/send-otp')
     @HttpCode(200)
+    @Throttle({ default: { limit: 5, ttl: 60000 } })
     async sendOtp(@Req() request: Request) {
-        const otp = await this.homeService.generateOtp(request.body['phone_number']);  // Service to generate OTP and send SMS
+        await this.homeService.generateOtp(request.body['phone_number']);
         return { message: 'OTP sent successfully' };
     }
 
 
     @Post('/verify-otp')
     @HttpCode(200)
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
     async verifyOtp(@Req() request: Request) {
-        
-        let phoneNumber = request.body['phone_number'];
-        let otp = request.body['otp'];
+        const phoneNumber = request.body['phone_number'];
+        const otp = request.body['otp'];
         const isValid = await this.homeService.verifyOtp(phoneNumber, otp);
         if (isValid) {
-            const token = await this.homeService.generateJWT(phoneNumber); // Service to generate JWT
-            // to add the login user if not exist
-            let userDetails = await this.homeService.addUser(phoneNumber);
-            return { token, userDetails };  // Return JWT token if OTP is valid
+            const userDetails = await this.homeService.addUser(phoneNumber);
+            const userId = userDetails?.result?.[0]?.user_id;
+            const token = await this.homeService.generateJWT(phoneNumber, userId);
+            return { token, userDetails };
         } else {
             return { statusCode: 401, message: 'Invalid OTP' };
         }
@@ -53,6 +56,7 @@ export class HomeController {
     }
     @Post('/getRecommenedProducts')
     @HttpCode(200)
+    @SkipThrottle()
     async getRecommenedProducts(@Req() request: Request) {
         const params = request.body; // Access the request body
         return await this.homeService.getRecommenedProducts(params);
@@ -79,48 +83,62 @@ export class HomeController {
 
     @Post('/checkWishlistStatus')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async checkWishlistStatus(@Req() request: Request) {
-        return await this.homeService.checkWishlistStatus(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.checkWishlistStatus(body);
     }
 
     @Post('/addToWishlist')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async addToWishlist(@Req() request: Request) {
-        return await this.homeService.addToWishlist(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.addToWishlist(body);
     }
 
     @Post('/removeFromWishlist')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async removeFromWishlist(@Req() request: Request) {
-        return await this.homeService.removeFromWishlist(request.body);
-    } 
-    
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.removeFromWishlist(body);
+    }
+
     @Post('/getWishlistedProducts')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async getWishlistedProducts(@Req() request: Request) {
-        return await this.homeService.getWishlistedProducts(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.getWishlistedProducts(body);
     }
-    
+
     @Post('/addToCart')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async addToCart(@Req() request: Request) {
-        return await this.homeService.addToCart(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.addToCart(body);
     }
-    
+
     @Post('/getCartDetails')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async getCartDetails(@Req() request: Request) {
-        return await this.homeService.getCartDetails(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.getCartDetails(body);
     }
-    
+
     @Post('/updateCartInfo')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async updateCartInfo(@Req() request: Request) {
         return await this.homeService.updateCartInfo(request.body);
     }
-    
+
     @Post('/removeFromCart')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async removeFromCart(@Req() request: Request) {
         return await this.homeService.removeFromCart(request.body);
     }
@@ -152,14 +170,18 @@ export class HomeController {
     
     @Post('/addNewAddress')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async addNewAddress(@Req() request: Request) {
-        return await this.homeService.addNewAddress(request.body);
+        const body = { ...request.body, userId: request['user']?.userId };
+        return await this.homeService.addNewAddress(body);
     }
-    
+
     @Post('/getSavedAddress')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async getSavedAddress(@Req() request: Request) {
-        return await this.homeService.getSavedAddress(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.getSavedAddress(body);
     }
     
     @Post('/getExploreCategoryProduct')
@@ -170,26 +192,38 @@ export class HomeController {
     }
     @Post('/addOrder')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async addOrder(@Req() request: Request) {
-        return await this.homeService.addOrder(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.addOrder(body);
     }
+
     @Post('/getOrdersList')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async getOrdersList(@Req() request: Request) {
-        return await this.homeService.getOrdersList(request.body);
-    } 
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.getOrdersList(body);
+    }
+
     @Post('/getOrderItemsList')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async getOrderItemsList(@Req() request: Request) {
         return await this.homeService.getOrderItemsList(request.body);
     }
+
     @Post('/addProductReviewRating')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async addProductReviewRating(@Req() request: Request) {
-        return await this.homeService.addProductReviewRating(request.body);
+        const body = { ...request.body, user_id: request['user']?.userId };
+        return await this.homeService.addProductReviewRating(body);
     }
+
     @Post('/addDeliveryManRating')
     @HttpCode(200)
+    @UseGuards(JwtAuthGuard)
     async addDeliveryManRating(@Req() request: Request) {
         return await this.homeService.addDeliveryManRating(request.body);
     }

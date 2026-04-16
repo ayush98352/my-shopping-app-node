@@ -5,13 +5,12 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { ConfigService } from './config/config.service';
 import { urlencoded, json } from 'express';
-import * as csurf from 'csurf';
-
 import { config } from 'dotenv';
 import { Request, Response } from 'express'; // Import types
 import { AuthMiddleware } from './middleware/auth.middleware'; // Update with the correct path
 import { TranslateResponseInterceptor } from './interceptors/translate-response.interceptor';
 import { TranslationService } from './modules/home/translation.service';
+import { verifyCsrfToken } from './csrf.utils';
 
 
 
@@ -23,8 +22,9 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log', 'debug'],
   });
   // const configService = new ConfigService('.env');
-  const csrfProtection = csurf({ cookie: { httpOnly: true } });
-    
+  const csrfSecret = process.env.CSRF_SECRET;
+  if (!csrfSecret) throw new Error('CSRF_SECRET must be set in environment');
+
   app.enableCors({
     origin: [
       'http://localhost:4200',
@@ -51,27 +51,14 @@ async function bootstrap() {
   app.use(helmet());
   app.use(json({ limit: '50mb' }));
 
-  // app.use(
-  //   urlencoded({ extended: true, limit: '50mb', parameterLimit: 100000 }),
-  // );
- 
-  // app.use(csurf({ cookie: { httpOnly: true } }));
-  
-   // Apply CSRF protection middleware
-  //  app.use(csrfProtection);
-
-  
-
-   app.use((req: Request, res: Response, next) => {
-    // console.log('Incoming CSRF Token:', req.headers['x-csrf-token']);
-    // console.log('CSRF Token from Cookie:', req.cookies['_csrf']);
-    csrfProtection(req, res, (err) => {
-      // if (err) {
-      //   console.log('CSRF Protection Error:', err);
-      //   return res.status(403).send('Forbidden');
-      // }
-      next();
-    });
+  const CSRF_SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+  app.use((req: Request, res: Response, next) => {
+    if (CSRF_SAFE_METHODS.includes(req.method)) return next();
+    const token = req.headers['x-csrf-token'] as string;
+    if (!token || !verifyCsrfToken(token, csrfSecret)) {
+      return res.status(403).json({ message: 'Invalid or missing CSRF token' });
+    }
+    next();
   });
   
   // app.use((req, res, next) => {

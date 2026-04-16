@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { lastValueFrom } from 'rxjs';
+import * as crypto from 'crypto';
 
 
 import { CommonLogicService } from 'src/common-logic/common-logic.service';
@@ -71,10 +72,10 @@ export class HomeService implements OnModuleInit {
 
       // Function to generate OTP
     async generateOtp(phoneNumber: string): Promise<void> {
-        const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit OTP
-        this.otps.set(phoneNumber, otp); // Save OTP in-memory for the phone number
-        // Here you would send the OTP via SMS (e.g., Twilio or Firebase SMS)
+        const otp = (crypto.randomInt(900000) + 100000).toString(); // cryptographically secure 6-digit OTP
+        this.otps.set(phoneNumber, otp);
         console.log(`OTP for ${phoneNumber} is ${otp}`);
+        // TODO: send OTP via SMS (e.g., Twilio or Firebase)
     }
 
     // Function to verify OTP
@@ -91,12 +92,12 @@ export class HomeService implements OnModuleInit {
     }
 
     // Function to generate JWT
-    generateJWT(phoneNumber: string): string {
-        const payload = { phoneNumber };  // Payload for the JWT
+    generateJWT(phoneNumber: string, userId: string | number): string {
+        const payload = { phoneNumber, userId };
         const secret = this.configService.get<string>('JWT_SECRET');
 
         try {
-            const token = this.jwtService.sign(payload, { secret: secret });
+            const token = this.jwtService.sign(payload, { secret });
             return token;
           } catch (error) {
             console.error('Error generating JWT:', error);
@@ -148,7 +149,8 @@ export class HomeService implements OnModuleInit {
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch(e){
-            return {"message": 'error', code: 500, 'result':{e}};
+            console.error('[getBrands]', e);
+            return {"message": 'error', code: 500, 'result':[]};
         }
 
     }
@@ -156,8 +158,8 @@ export class HomeService implements OnModuleInit {
     async getSelectedCategoryProduct(request){
         let category_id = request.category_id;
         let user_id = request.user_id;
-        let limit = request?.limit ? request?.limit : 30;
-        let offset = request?.offset ? request?.offset : 0;
+        let limit = Math.min(Math.max(parseInt(request?.limit ?? 30, 10), 1), 100);
+        let offset = Math.max(parseInt(request?.offset ?? 0, 10), 0);
 
 
         // let query = "SELECT * FROM products.products_master where category_id = '"+category_id+"'";
@@ -191,8 +193,8 @@ export class HomeService implements OnModuleInit {
 
     async getRecommenedProducts(request){
         let user_id = request.user_id;
-        let limit = request?.limit ? request?.limit : 10;
-        let offset = request?.offset ? request?.offset : 0;
+        let limit = Math.min(Math.max(parseInt(request?.limit ?? 10, 10), 1), 100);
+        let offset = Math.max(parseInt(request?.offset ?? 0, 10), 0);
 
         
         // let query = "SELECT * FROM products.products_master WHERE is_active = 1 AND availability = 'In Stock' ORDER BY discount_percent DESC LIMIT 10";
@@ -222,15 +224,16 @@ export class HomeService implements OnModuleInit {
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch(e){
-            return {"message": 'error', code: 500, 'result': {e}};
+            console.error('[getRecommenedProducts]', e);
+            return {"message": 'error', code: 500, 'result': []};
         }
     }
 
     async getSelectedBrandProduct(request){
         let brand_id = request.brand_id;
         let user_id = request.user_id;
-        let limit = request?.limit ? request?.limit : 30;
-        let offset = request?.offset ? request?.offset : 0;
+        let limit = Math.min(Math.max(parseInt(request?.limit ?? 30, 10), 1), 100);
+        let offset = Math.max(parseInt(request?.offset ?? 0, 10), 0);
 
         // let query = "SELECT * FROM products.products_master WHERE brand_id = '" + brand_id + "'";
         // query += "AND availability = 'In Stock' AND is_active = 1";
@@ -263,10 +266,10 @@ export class HomeService implements OnModuleInit {
 
     async getProductDetails(request){
         let product_id = request.product_id;
-        let query = "SELECT * FROM products.products_master WHERE product_id = '" + product_id + "'";
+        let query = "SELECT * FROM products.products_master WHERE product_id = ?";
 
         try{
-            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, {},'DB_CONN');
+            let result = await this.commonLogicService.dbCallPdoWIBuilder(query, [product_id],'DB_CONN');
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch{
@@ -299,7 +302,7 @@ export class HomeService implements OnModuleInit {
             return {"message": 'sucess', code: 200, 'result':result};
         }
         catch(e){
-           console.log(e);
+           console.error('[addToWishlist]', e);
             return {"message": 'error', code: 500, 'result':[]};
         }
     }
@@ -321,8 +324,8 @@ export class HomeService implements OnModuleInit {
 
     async getWishlistedProducts(request){
         let user_id = request.user_id;
-        let limit = request?.limit ? request?.limit : 10;
-        let offset = request?.offset ? request?.offset : 0;
+        let limit = Math.min(Math.max(parseInt(request?.limit ?? 10, 10), 1), 100);
+        let offset = Math.max(parseInt(request?.offset ?? 0, 10), 0);
 
         let query = "select b.* from users.wishlist a join products.products_master b on a.product_id=b.product_id where a.user_id = ? order by a.wishlist_id desc limit ? OFFSET ?"
         let whereParams = [user_id, limit, offset];
@@ -394,7 +397,12 @@ export class HomeService implements OnModuleInit {
     }
 
     async updateCartInfo(request){
-        let product = JSON.parse(request.product);
+        let product: any;
+        try {
+            product = typeof request.product === 'string' ? JSON.parse(request.product) : request.product;
+        } catch {
+            return {"message": 'invalid product data', code: 400, 'result': 'Failed to update cart info'};
+        }
         let cart_id = product.cart_id;
         let quantity = product.quantity;
         let size = product.size;
@@ -428,7 +436,7 @@ export class HomeService implements OnModuleInit {
     }
 
     async getSearchedList(request, lang = 'en'){
-        let searchedText: string = request.searchedText;
+        let searchedText: string = String(request.searchedText ?? '').slice(0, 100);
         let searchTerms: string[] = [searchedText]; // default: search as-is
 
         if (lang === 'hi' && searchedText) {
@@ -470,7 +478,7 @@ export class HomeService implements OnModuleInit {
             let lat = request.lat;
 
             const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
-            const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=${apiKey}`;
+            const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${encodeURIComponent(lat)},${encodeURIComponent(lon)}&key=${apiKey}`;
             const response = await lastValueFrom(this.httpService.get(url));
             const locationData = response.data;
             
@@ -506,14 +514,15 @@ export class HomeService implements OnModuleInit {
             
             return formattedResponse;
         }catch(e){
-            return {"message": 'error: '+e, 'code': 500, 'result':[]};
+            console.error('[getUserLocation] error:', e);
+            return {"message": 'error fetching location', 'code': 500, 'result':[]};
         }
     }
 
     async fetchPlaceSuggestions(request) {
 
         const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
-        const input = request.searchedText;
+        const input = encodeURIComponent(String(request.searchedText ?? '').slice(0, 200));
         const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${input}&components=country:in&key=${apiKey}`;
         
         try {
@@ -528,7 +537,7 @@ export class HomeService implements OnModuleInit {
     }
       
     async fetchSelectedAddressDeatils(request) {
-        const placeId = request.placeId;
+        const placeId = encodeURIComponent(request.placeId);
 
         const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
 
@@ -595,7 +604,8 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[addNewAddress]', e);
+            return {"message": 'error saving address', code: 500, 'result':[]};
         }
 
     }
@@ -608,16 +618,17 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[getSavedAddress]', e);
+            return {"message": 'error fetching addresses', code: 500, 'result':[]};
         }
     }
-   
+
     async getExploreCategoryProduct(request, lang = 'en'){
         let gender = request.gender;
         let category = request.category;
         let sub_category = request.sub_category;
-        let limit = request?.limit ? request?.limit : 30;
-        let offset = request?.offset ? request?.offset : 0;
+        let limit = Math.min(Math.max(parseInt(request?.limit ?? 30, 10), 1), 100);
+        let offset = Math.max(parseInt(request?.offset ?? 0, 10), 0);
 
         // If params arrive in Hindi (Devanagari), translate them back to English for DB lookup
         if (lang === 'hi') {
@@ -667,7 +678,8 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[getExploreCategoryProduct]', e);
+            return {"message": 'error', code: 500, 'result':[]};
         }
     }
 
@@ -707,7 +719,8 @@ export class HomeService implements OnModuleInit {
                 return {"message": result?.message, code: 500, 'result': 'Order Was not Added Successfully'};
             }
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[addOrder]', e);
+            return {"message": 'error placing order', code: 500, 'result':[]};
         }
     }
 
@@ -720,7 +733,8 @@ export class HomeService implements OnModuleInit {
                 let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
                 
             }catch(e){
-                return {"message": e, code: 500, 'result':[]};
+                console.error('[addOrderItems]', e);
+                return {"message": 'error adding order items', code: 500, 'result':[]};
             }
         }
         return {"message": 'success', code: 200, 'result':' Order Items Added Successfully'};
@@ -733,7 +747,8 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[fetchLastOrderId]', e);
+            return {"message": 'error fetching order id', code: 500, 'result':[]};
         }
     }
 
@@ -749,10 +764,11 @@ export class HomeService implements OnModuleInit {
             });
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[getOrdersList]', e);
+            return {"message": 'error fetching orders', code: 500, 'result':[]};
         }
     }
-    
+
     async getOrderItemsList(request){
         let order_id = request.order_id;
         let query = `SELECT a.* , b.rating, b.review_text, b.review_date, b.review_image
@@ -768,7 +784,8 @@ export class HomeService implements OnModuleInit {
             
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[getOrderItemsList]', e);
+            return {"message": 'error fetching order items', code: 500, 'result':[]};
         }
     }
 
@@ -780,7 +797,8 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[addDeliveryManRating]', e);
+            return {"message": 'error saving rating', code: 500, 'result':[]};
         }
     }
 
@@ -800,9 +818,10 @@ export class HomeService implements OnModuleInit {
                     let whereParams = [request?.user_id, request?.order_id, item?.product_id, item?.rating, item?.review, item?.photos, item?.review_date];
                     try{
                         await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
-                    
+
                     }catch(e){
-                        return {"message": e, code: 500, 'result':[]};
+                        console.error('[addProductReviewRating insert]', e);
+                        return {"message": 'error saving review', code: 500, 'result':[]};
                     }
                 }
                 else{
@@ -814,7 +833,8 @@ export class HomeService implements OnModuleInit {
                         await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
 
                     }catch(e){
-                        return {"message": e, code: 500, 'result':[]};
+                        console.error('[addProductReviewRating update]', e);
+                        return {"message": 'error updating review', code: 500, 'result':[]};
                     }
                 }
             }
@@ -823,17 +843,20 @@ export class HomeService implements OnModuleInit {
     }
 
     async getMallsList(request){
-        let user_lat = request.latitude;
-        let user_lon = request.longitude;
-        let limit = request?.limit ? request?.limit : 5;
-        let offset = request?.offset ? request?.offset : 0;
-        let searchedText = request?.searchText ? request?.searchText : '';
+        let user_lat = parseFloat(request.latitude);
+        let user_lon = parseFloat(request.longitude);
+        if (isNaN(user_lat) || isNaN(user_lon) || user_lat < -90 || user_lat > 90 || user_lon < -180 || user_lon > 180) {
+            return {"message": 'invalid coordinates', code: 400, 'result':[]};
+        }
+        let limit = Math.min(Math.max(parseInt(request?.limit ?? 5, 10), 1), 100);
+        let offset = Math.min(Math.max(parseInt(request?.offset ?? 0, 10), 0), 10000);
+        let searchedText = request?.searchText ? String(request.searchText).slice(0, 100) : '';
 
         // let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance  limit ? OFFSET ?`;
 
         let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls ORDER BY distance  limit ? OFFSET ?`;
 
-        let whereParms = [user_lat, user_lon, user_lat, limit, offset];
+        let whereParms: (string | number)[] = [user_lat, user_lon, user_lat, limit, offset];
 
         if(searchedText != ''){
             query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.malls WHERE name LIKE ? ORDER BY distance  limit ? OFFSET ?`;
@@ -845,21 +868,25 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParms,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[getMallsList]', e);
+            return {"message": 'error fetching malls', code: 500, 'result':[]};
         }
     }
 
     async getShopsList(request){
-        let user_lat = request.latitude;
-        let user_lon = request.longitude;
-        let limit = request?.limit ? request?.limit : 10;
-        let offset = request?.offset ? request?.offset : 0;
-        let searchedText = request?.searchText ? request?.searchText : '';
+        let user_lat = parseFloat(request.latitude);
+        let user_lon = parseFloat(request.longitude);
+        if (isNaN(user_lat) || isNaN(user_lon) || user_lat < -90 || user_lat > 90 || user_lon < -180 || user_lon > 180) {
+            return {"message": 'invalid coordinates', code: 400, 'result':[]};
+        }
+        let limit = Math.min(Math.max(parseInt(request?.limit ?? 10, 10), 1), 100);
+        let offset = Math.min(Math.max(parseInt(request?.offset ?? 0, 10), 0), 10000);
+        let searchedText = request?.searchText ? String(request.searchText).slice(0, 100) : '';
 
         // let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(${user_lat})) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(${user_lon})) + SIN(RADIANS(${user_lat})) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance`;
 
         let query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores ORDER BY distance limit ? OFFSET ?`;
-        let whereParms = [user_lat, user_lon, user_lat, limit, offset];
+        let whereParms: (string | number)[] = [user_lat, user_lon, user_lat, limit, offset];
 
         if(searchedText != ''){
             query = `SELECT *, ROUND((6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(latitude)) * COS(RADIANS(longitude) - RADIANS(?)) + SIN(RADIANS(?)) * SIN(RADIANS(latitude)))), 2) AS distance FROM products.stores WHERE name LIKE ? ORDER BY distance limit ? OFFSET ?`;
@@ -871,7 +898,8 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParms,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[getShopsList]', e);
+            return {"message": 'error fetching shops', code: 500, 'result':[]};
         }
     }
 
@@ -883,7 +911,8 @@ export class HomeService implements OnModuleInit {
             let result = await this.commonLogicService.dbCallPdoWIBuilder(query, whereParams,'DB_CONN');
             return {"message": 'success', code: 200, 'result':result};
         }catch(e){
-            return {"message": e, code: 500, 'result':[]};
+            console.error('[getMallsStoresList]', e);
+            return {"message": 'error fetching stores', code: 500, 'result':[]};
         }
     }
 
